@@ -3,74 +3,41 @@
 ## Objective
 Add animations, ensure accessibility, and test across devices.
 
-## Tasks
+## Key Tasks
 
-### 15.1 Create Animations (`src/styles/animations.css`)
+### 15.1 Create Animations
 
-```css
-/* Page transitions */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+**File**: `src/styles/animations.css`
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+**Animation Types to Implement**:
 
-/* Modal animations */
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+**Page Transitions**:
+- Fade in: Simple opacity 0 → 1 transition
+- Slide up: Combine opacity with translateY for gentle entrance
+- Duration: 200-250ms (quick but not jarring)
+- Easing: ease-out for natural feel
 
-/* Toast animations */
-@keyframes toastSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+**Modal Animations**:
+- Fade in with subtle scale: opacity 0 → 1, scale 0.95 → 1
+- Duration: 200ms
+- Creates gentle "pop-in" effect
 
-/* Apply animations (respect reduced motion) */
-.page-enter {
-  animation: fadeIn 250ms ease-out;
-}
+**Toast Notifications**:
+- Slide up from bottom: translateY(100%) → 0 with opacity
+- Duration: 250ms
+- Positions toast entering from bottom edge
 
-.modal-enter {
-  animation: modalFadeIn 200ms ease-out;
-}
+**CRITICAL: Respect Reduced Motion**:
+- Use `@media (prefers-reduced-motion: reduce)` to disable animations
+- Set `animation: none !important` for users who prefer no motion
+- This is required for accessibility compliance
 
-.toast-enter {
-  animation: toastSlideUp 250ms ease-out;
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .page-enter,
-  .modal-enter,
-  .toast-enter {
-    animation: none !important;
-  }
-}
-```
+**Animation Guidelines**: See **UI_design.md §3 "Animation & Motion"** for philosophy:
+- Minimal approach: Only animate when adding clarity
+- Keep durations under 300ms
+- Use subtle easing (ease-out, ease-in-out)
+- Never animate continuously (no spinners during long operations)
+- Provide immediate state feedback without waiting for animations
 
 ### 15.2 Accessibility Audit Checklist
 

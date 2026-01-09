@@ -1,390 +1,191 @@
 # Step 1: Project Setup & Configuration
 
 ## Objective
-Set up the development environment with all necessary tooling and configuration.
+Set up the development environment with React 18+ TypeScript, Vite, Tailwind CSS, and PWA support for the Koru meditation app.
 
-## Tasks
+## Why This Matters
+Proper configuration at the start ensures:
+- Type safety with strict TypeScript settings
+- Fast development with Vite's HMR
+- Design consistency with Tailwind design tokens
+- PWA capabilities (installable, offline-ready)
+- Clear path aliases for clean imports
 
-### 1.1 Install Dependencies
+---
 
+## Key Tasks
+
+### 1.1 Install Core Dependencies
+
+**Framework & Build**:
 ```bash
-# Core framework
 pnpm add react react-dom react-router-dom
+pnpm add -D @vitejs/plugin-react vite typescript @types/react @types/react-dom
+```
 
-# TypeScript types
-pnpm add -D @types/react @types/react-dom typescript
-
-# Build tools
-pnpm add -D @vitejs/plugin-react vite
-
-# Styling
+**Styling**:
+```bash
 pnpm add -D tailwindcss postcss autoprefixer
 pnpm add -D @tailwindcss/forms tailwindcss-animate
+```
 
-# PWA support
+**PWA**:
+```bash
 pnpm add -D vite-plugin-pwa workbox-window
-
-# Utility libraries (optional for later)
-# pnpm add date-fns
-# pnpm add howler (for audio - Phase 3)
 ```
 
-### 1.2 Configure TypeScript (`tsconfig.json`)
+**Optional (Future phases)**:
+- `date-fns` - Date utilities
+- `howler` - Audio management (Phase 3: Session Player)
 
-```json
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "strict": true,
+### 1.2 Configure TypeScript
 
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
+**File**: `tsconfig.json`
 
-    /* Linting */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+**Requirements**:
+- Enable strict mode for type safety
+- Set target to ES2020
+- Configure JSX as `react-jsx`
+- Add path alias `@/*` pointing to `./src/*`
+- Include noUnusedLocals and noUnusedParameters
 
-    /* Path aliases */
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
-}
-```
+### 1.3 Configure Vite
 
-### 1.3 Configure Vite (`vite.config.ts`)
+**File**: `vite.config.ts`
 
-```typescript
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
-import path from 'path';
+**Requirements**:
+- Add React plugin
+- Configure PWA plugin with manifest settings (see §1.5 below)
+- Set up path alias to match TypeScript config (`@` → `./src`)
+- Configure dev server on port 5173 with auto-open
 
-export default defineConfig({
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['fonts/**/*', 'icons/**/*'],
-      manifest: {
-        name: 'Koru - Meditation Rituals',
-        short_name: 'Koru',
-        description: 'Goal-driven meditation ritual generator',
-        theme_color: '#FF9A54',
-        background_color: '#FFFCF8',
-        display: 'standalone',
-        orientation: 'portrait',
-        icons: [
-          {
-            src: 'icons/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: 'icons/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-        ],
-      },
-      workbox: {
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365,
-              },
-            },
-          },
-        ],
-      },
-    }),
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  server: {
-    port: 5173,
-    open: true,
-  },
-});
-```
+**PWA Workbox Configuration**:
+- Runtime caching for Google Fonts (CacheFirst, 1 year expiration)
+- Asset precaching for fonts and icons
 
-### 1.4 Configure Tailwind (`tailwind.config.js`)
+### 1.4 Configure Tailwind CSS
 
-```javascript
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {
-      colors: {
-        // Warm & inviting palette
-        peach: {
-          50: '#FFF7F0',
-          100: '#FFEEE0',
-          200: '#FFD9BD',
-          300: '#FFC49A',
-          400: '#FFAF77',
-          500: '#FF9A54', // Primary
-          600: '#E67B3C',
-          700: '#CC5C24',
-          800: '#B33D0C',
-          900: '#992000',
-        },
-        warm: {
-          50: '#FFFCF8',  // Main background
-          100: '#FFF8F0',
-          200: '#FFF0E0',
-          300: '#FFE8D0',
-          400: '#FFE0C0',
-          500: '#FFD8B0',
-        },
-        gentle: {
-          yellow: '#FFF9E6',
-          gold: '#F5E6B3',
-        },
-        calm: {
-          50: '#F9F9F8',
-          100: '#F3F3F1',
-          200: '#E8E8E6',
-          300: '#D4D4D0',
-          400: '#AFAFAB',
-          500: '#8B8B86',
-          600: '#6B6B66',
-          700: '#4F4F4B',
-          800: '#38383A',
-          900: '#252527',
-        },
-        success: '#A3D9B1',
-        warning: '#FFD8B0',
-        error: '#FFB3BA',
-      },
-      fontFamily: {
-        serif: ['Lora', 'Georgia', 'serif'],
-        sans: ['Inter', '-apple-system', 'system-ui', 'sans-serif'],
-      },
-      fontSize: {
-        'session-sm': ['1.125rem', '1.75'],
-        'session-md': ['1.5rem', '2'],
-        'session-lg': ['2rem', '2.25'],
-        'session-xl': ['2.5rem', '2.5'],
-      },
-      spacing: {
-        '18': '4.5rem',
-        '22': '5.5rem',
-      },
-      borderRadius: {
-        'card': '1rem',
-        'card-lg': '1.25rem',
-      },
-      boxShadow: {
-        'card': '0 2px 8px rgba(0, 0, 0, 0.04)',
-        'card-hover': '0 4px 12px rgba(0, 0, 0, 0.08)',
-        'elevated': '0 8px 24px rgba(0, 0, 0, 0.12)',
-      },
-    },
-  },
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('tailwindcss-animate'),
-  ],
-}
-```
+**File**: `tailwind.config.js`
 
-### 1.5 Initialize Tailwind
+**Content paths**:
+- `./index.html`
+- `./src/**/*.{js,ts,jsx,tsx}`
 
+**Theme Extensions**:
+- **Colors**: Warm & inviting palette (peach, warm, calm, gentle, functional colors)
+  - See **UI_design.md §3 "Color Palette (Warm & Inviting)"** for exact hex codes
+- **Fonts**: Lora (serif) and Inter (sans-serif)
+  - See **UI_design.md §3 "Typography"** for font configuration
+- **Custom spacing**: Add 18 (4.5rem), 22 (5.5rem)
+- **Border radius**: card (1rem), card-lg (1.25rem)
+- **Box shadows**: card, card-hover, elevated
+- **Session text sizes**: session-sm through session-xl (adjustable text)
+
+**Plugins**:
+- `@tailwindcss/forms` - Form styling
+- `tailwindcss-animate` - Animation utilities
+
+**Initialize Tailwind**:
 ```bash
 pnpm dlx tailwindcss init -p
 ```
 
-### 1.6 Create Base Styles (`src/styles/globals.css`)
+### 1.5 Create Base Styles
 
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+**File**: `src/styles/globals.css`
 
-/* Font imports */
-@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+**Requirements**:
+- Import Tailwind directives (@tailwind base, components, utilities)
+- Import Lora and Inter fonts from Google Fonts
+- Set base styles:
+  - Background: `bg-warm-50`, text: `text-calm-900`, font: `font-sans`
+  - Dynamic viewport height for mobile (`100dvh`)
+  - Headings use `font-serif`
+- Add focus-visible styles with peach ring
+- **Critical**: Implement prefers-reduced-motion support
+  - See **UI_design.md §3 "Animation & Motion"** for guidelines
+  - Disable all animations when user has reduced motion preference
+- Add utility classes for safe-area insets (top, bottom, left, right)
 
-/* CSS Reset & Base Styles */
-@layer base {
-  * {
-    @apply border-calm-200;
-  }
+### 1.6 Create Entry Points
 
-  html {
-    @apply antialiased;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+**File**: `src/main.tsx`
+- Create React root with StrictMode
+- Import App component and global styles
 
-  body {
-    @apply bg-warm-50 text-calm-900 font-sans;
-    min-height: 100vh;
-    min-height: 100dvh; /* Dynamic viewport height for mobile */
-  }
+**File**: `src/App.tsx`
+- Simple component showing "Koru" in peach color for verification
+- Will be expanded with providers and router in later steps
 
-  /* Remove default margins */
-  h1, h2, h3, h4, h5, h6, p {
-    @apply m-0;
-  }
+**File**: `index.html`
+- Set viewport with `viewport-fit=cover` for safe areas
+- Add theme-color meta tag (#FF9A54 - peach)
+- Add description meta tag
+- Set title to "Koru - Meditation Rituals"
 
-  /* Headings use serif font */
-  h1, h2, h3 {
-    @apply font-serif;
-  }
+### 1.7 Update Package Scripts
 
-  /* Focus visible styles */
-  *:focus-visible {
-    @apply outline-none ring-2 ring-peach-500 ring-offset-2;
-  }
+**File**: `package.json` scripts section
 
-  /* Reduced motion support */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
-}
+Add:
+- `dev`: Start Vite dev server
+- `build`: TypeScript check + Vite build
+- `preview`: Preview production build
+- `lint`: TypeScript type checking without emit
 
-/* Utility classes */
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+---
 
-  .safe-top {
-    padding-top: env(safe-area-inset-top);
-  }
+## Configuration References
 
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+**Design tokens**: See **UI_design.md §3** for complete design language:
+- Color Palette (Warm & Inviting)
+- Typography (Lora + Inter)
+- Animation & Motion guidelines
+- Accessibility requirements
 
-  .safe-left {
-    padding-left: env(safe-area-inset-left);
-  }
+**Technical Foundation**: See **UI_design.md §1.5** for:
+- Platform specifications (PWA)
+- Tech stack decisions
+- Design philosophy
 
-  .safe-right {
-    padding-right: env(safe-area-inset-right);
-  }
-}
-```
+---
 
-### 1.7 Create Entry Point (`src/main.tsx`)
+## Files to Create/Modify
 
-```typescript
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './styles/globals.css';
+- `/Users/amirdaygmail.com/projects/Koru/package.json` - Dependencies and scripts
+- `/Users/amirdaygmail.com/projects/Koru/tsconfig.json` - TypeScript configuration
+- `/Users/amirdaygmail.com/projects/Koru/vite.config.ts` - Vite + PWA setup
+- `/Users/amirdaygmail.com/projects/Koru/tailwind.config.js` - Design tokens
+- `/Users/amirdaygmail.com/projects/Koru/postcss.config.js` - PostCSS (auto-generated)
+- `/Users/amirdaygmail.com/projects/Koru/src/styles/globals.css` - Base styles
+- `/Users/amirdaygmail.com/projects/Koru/src/main.tsx` - React entry point
+- `/Users/amirdaygmail.com/projects/Koru/src/App.tsx` - Root component
+- `/Users/amirdaygmail.com/projects/Koru/index.html` - HTML template
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
-```
-
-### 1.8 Create Minimal App Component (`src/App.tsx`)
-
-```typescript
-function App() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <h1 className="text-4xl font-serif text-peach-500">
-        Koru
-      </h1>
-    </div>
-  );
-}
-
-export default App;
-```
-
-### 1.9 Update index.html
-
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#FF9A54" />
-    <meta name="description" content="Goal-driven meditation ritual generator" />
-    <title>Koru - Meditation Rituals</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
-```
-
-### 1.10 Update package.json Scripts
-
-```json
-{
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "lint": "tsc --noEmit"
-  }
-}
-```
+---
 
 ## Verification
 
-Run the following commands to verify setup:
+Run these commands to verify setup:
 
 ```bash
-# Install dependencies
+# Install all dependencies
 pnpm install
 
-# Start dev server
+# Start development server
 pnpm dev
-
-# Should open http://localhost:5173 with "Koru" displayed in peach color
 ```
 
-## Expected Output
+**Expected Results**:
+- [ ] Dev server runs on http://localhost:5173
+- [ ] Browser opens automatically
+- [ ] Page displays "Koru" in Lora serif font, peach color (#FF9A54)
+- [ ] Hot reload works when editing `src/App.tsx`
+- [ ] TypeScript compiles without errors (`pnpm lint`)
+- [ ] Tailwind classes apply correctly (inspect element shows compiled styles)
+- [ ] Console shows no errors
 
-- Dev server runs on port 5173
-- Page displays "Koru" in Lora serif font, peach color
-- Hot reload works when editing files
-- TypeScript compiles without errors
-- Tailwind classes apply correctly
+---
 
 ## Next Step
 

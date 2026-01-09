@@ -1,7 +1,14 @@
 # Step 7: Base UI Components
 
 ## Objective
-Build the design system's primitive components.
+Build the design system's primitive components that form the foundation of all screens.
+
+## Why This Matters
+Reusable base components ensure:
+- **Visual consistency**: Same buttons, cards, inputs across all screens
+- **Accessibility**: Built-in focus states, ARIA labels, keyboard navigation
+- **Maintainability**: Change styling once, updates everywhere
+- **Speed**: Compose complex UIs from reliable primitives
 
 ## Files to Create
 
@@ -65,11 +72,17 @@ src/components/ui/
 ## Design Tokens Usage
 
 All components use Tailwind classes with design tokens:
-- Colors: peach-*, warm-*, calm-*
-- Spacing: p-4, p-6, gap-4
-- Border radius: rounded-card
-- Shadows: shadow-card, shadow-elevated
-- Font: font-serif (headings), font-sans (body)
+- **Colors**: peach-*, warm-*, calm-* (See **UI_design.md §3 "Color Palette"**)
+- **Spacing**: p-4, p-6, gap-4 (consistent spacing scale)
+- **Border radius**: rounded-card (gentle, approachable corners)
+- **Shadows**: shadow-card, shadow-elevated (subtle depth)
+- **Typography**: font-serif (Lora for headings), font-sans (Inter for body)
+
+**Component Pattern Philosophy**: See **UI_design.md §4 "Component System"** for:
+- Composition over configuration
+- Accessible by default
+- Warm visual language
+- Smart defaults with user control
 
 ## Next Step
 
