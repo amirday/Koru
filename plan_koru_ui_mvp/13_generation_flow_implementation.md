@@ -1,219 +1,73 @@
 # Step 13: Generation Flow Implementation
 
 ## Objective
-Implement the complete end-to-end ritual generation flow in RitualContext with background execution, progress updates, clarifying questions, and notifications.
-
-## Why This Matters
-The generation flow is the core differentiator of Koru:
-- **Non-blocking**: User can navigate away during generation
-- **Interactive**: AI can ask clarifying questions mid-generation
-- **Transparent**: Staged progress shows what's happening
-- **Reliable**: Notifications ensure user knows when ritual is ready
-
----
+Implement end-to-end ritual generation in RitualContext with background execution, progress updates, clarifying questions, and notifications.
 
 ## Key Tasks
 
 ### 13.1 Implement startGeneration Action
+**File**: `src/contexts/RitualContext.tsx`
 
-**In**: `src/contexts/RitualContext.tsx`
+**Core responsibilities**: Validate inputs (goal, duration), generate task ID, update state (`isGenerating = true`), call background service, handle progress callbacks, handle clarifying questions, save ritual on completion, show notifications.
 
-**Responsibilities**:
-1. **Validate inputs**: Ensure goal exists, duration > 0
-2. **Generate task ID**: Unique identifier for this generation
-3. **Update state**: Set isGenerating = true
-4. **Call background service**: Start async task
-5. **Handle progress**: Update generationProgress state as callbacks arrive
-6. **Handle questions**: Set clarifyingQuestion state if AI asks
-7. **Handle completion**: Save ritual, show notification, update state
+**Integration points**:
+- `backgroundTaskService.startTask()` - Async execution
+- `aiService.generateRitual()` - AI provider
+- `storageService.saveRitual()` - Persistence
+- `notificationService.show()` - User feedback
 
-**Integration Points**:
-- Use `backgroundTaskService.startTask()` for async execution
-- Use `aiService.generateRitual()` for AI provider calls
-- Use `storageService.saveRitual()` to persist result
-- Use `notificationService.show()` to notify user
+**Progress flow**: Clarifying (25%) → Structuring (50%) → Writing (75%) → Complete (100%). At 25%, optionally show clarifying question modal, pause generation until answered.
 
-**Progress Callback**:
-- Receives AIGenerationProgress objects (stage, message, progress %)
-- Updates context state immediately
-- UI reactively updates via state changes
+**Error handling**: Network errors show toast with retry; validation errors show inline message; timeout (30s) shows warning.
 
-**Clarifying Questions**:
-- After "clarifying" stage (25% progress)
-- Call `aiService.askClarifyingQuestion(context)`
-- If question returned, set clarifyingQuestion state
-- Pause generation (use Promise that resolves when answered)
-- Store resolve function in ref to continue later
-
-**Error Handling**:
-- Network errors: Show error toast with retry option
-- Validation errors: Show validation message
-- Timeout (30s): Show warning with continue/cancel options
-
-**See**: **UI_design.md §6.3** for complete 3-phase generation UX flow
+**Reference**: UI_design.md §6.3 for 3-phase generation UX
 
 ### 13.2 Implement answerClarifyingQuestion Action
-
-**Responsibilities**:
-1. **Clear question**: Set clarifyingQuestion = null
-2. **Continue generation**: Resolve paused Promise with answer
-3. **Update state**: Generation continues from where it paused
-
-**Implementation**:
-- Store Promise resolve function in a ref when question appears
-- When answer provided, call stored resolve function
-- Generation resumes automatically
+Clear `clarifyingQuestion` state, resolve paused Promise with answer, generation resumes from where it paused. Use ref to store resolve function when question appears.
 
 ### 13.3 Implement Notification Integration
-
-**Request Permission**:
-- On first generation attempt, check notification permission
-- If not granted and not denied, request permission
-- Store permission state
-
-**Show Notifications**:
-- **Browser notification** (if permission granted and user not on page):
-  - Title: "Koru"
-  - Body: "Your ritual is ready!"
-  - Icon: App icon
-  - Tag: generation task ID
-  - onClick: Navigate to /rituals/:id (future) or /home
-
-- **In-app toast** (always shown):
-  - Type: success
-  - Message: "Ritual created: [ritual.title]"
-  - Duration: 5000ms
+Request browser notification permission on first generation. Show browser notification (if granted + user off-page): "Your ritual is ready!" with app icon. Always show in-app toast: "Ritual created: [title]" (5s duration).
 
 ### 13.4 Implement Background Execution
+Generation runs async, doesn't block UI. User can navigate away, generation continues, progress persists in context. Optional: Show "Generating..." indicator in header when `isGenerating = true` and user not on /home.
 
-**Behavior**:
-- Generation runs asynchronously (doesn't block UI thread)
-- User can navigate to other tabs/screens
-- Generation continues in background
-- Progress stored in context (persists during navigation)
-- Completion triggers notification
-
-**Background Indicator** (Optional for MVP):
-- Show small indicator in header or bottom tab bar
-- Text: "Generating..." with spinner
-- Only shows when isGenerating = true and user left /home
-
-### 13.5 Handle State Persistence (Optional)
-
-**For MVP**: Generation state is in-memory only
-- If user refreshes page, generation is lost
-- This is acceptable for MVP
-
-**Future Enhancement**:
-- Store generation state in localStorage
-- Restore on page load
-- Resume generation if incomplete
-
----
-
-## State Flow Diagram
-
-```
-User clicks "Generate"
-  ↓
-Validate options
-  ↓
-Start background task
-  ↓
-Update state: isGenerating = true
-  ↓
-[Stage 1: Clarifying] progress = 25%
-  ↓
-AI asks question? → Show modal → Wait for answer → Continue
-  ↓
-[Stage 2: Structuring] progress = 50%
-  ↓
-[Stage 3: Writing] progress = 75%
-  ↓
-[Stage 4: Complete] progress = 100%
-  ↓
-Save ritual to storage
-  ↓
-Update state: isGenerating = false, new ritual added
-  ↓
-Show notifications (browser + toast)
-  ↓
-Done
-```
-
----
-
-## Mock AI Provider Integration
-
+### 13.5 Mock AI Provider
 **File**: `src/services/ai/MockAIProvider.ts`
 
-**generateRitual Implementation**:
-- Simulate AI thinking with staged delays (~1.5s per stage)
-- Call onProgress callback at each stage
-- Return pre-crafted ritual from mocks based on options (tone, duration)
-- Total generation time: ~5-6 seconds
-
-**askClarifyingQuestion Implementation**:
-- Return a sample question (e.g., "What time of day will you practice?")
-- Options: "Morning", "Afternoon", "Evening", "Other"
-- For MVP: Question is optional (can return null sometimes)
-
----
+Simulate staged delays (~1.5s/stage), call `onProgress` callback at each stage, return pre-crafted ritual from mocks (vary by tone/duration). Total time: ~5-6s. `askClarifyingQuestion` returns sample question (e.g., "What time of day?") or null.
 
 ## Files to Modify
+- `src/contexts/RitualContext.tsx` - Main implementation
+- `src/services/ai/MockAIProvider.ts` - Mock generation
+- `src/services/background/background-task-service.ts` - Async tasks
+- `src/services/notification/notification-service.ts` - Notifications
 
-- `/Users/amirdaygmail.com/projects/Koru/src/contexts/RitualContext.tsx` - Main implementation
-- `/Users/amirdaygmail.com/projects/Koru/src/services/ai/MockAIProvider.ts` - Mock generation logic
-- `/Users/amirdaygmail.com/projects/Koru/src/services/background/background-task-service.ts` - Async task handling
-- `/Users/amirdaygmail.com/projects/Koru/src/services/notification/notification-service.ts` - Notification logic
+## Test Plan
 
----
+**Automated Tests**:
+- [ ] Integration test: `startGeneration` updates state (`isGenerating = true`)
+- [ ] Integration test: Progress callbacks fire at 25%, 50%, 75%, 100%
+- [ ] Integration test: Clarifying question pauses, resumes on answer
+- [ ] Mock test: AI service returns ritual after ~5s
+- [ ] Unit test: `answerClarifyingQuestion` clears question state
+- [ ] Unit test: Completed ritual saves to localStorage
+- [ ] Unit test: Notification permission requested on first generation
 
-## Verification
+**Manual Verification**:
+- [ ] Click generate → progress bar animates 0→100%
+- [ ] Stage messages update ("Clarifying..." → "Structuring..." → "Writing..." → "Complete")
+- [ ] At 25%, clarifying question modal appears (if enabled)
+- [ ] Answer question → modal closes, generation continues
+- [ ] Navigate to /rituals tab during generation → background continues
+- [ ] After ~5s, toast appears: "Ritual created: [title]"
+- [ ] Browser notification appears (if permission granted, user off-page)
+- [ ] Ritual appears in RitualContext.state.rituals
+- [ ] Refresh page → ritual persisted in localStorage
+- [ ] Click "Work in background" → progress UI hides, generation continues
+- [ ] Try generate without goal → validation error toast
+- [ ] Simulate network error → retry option works
 
-Test complete generation flow:
-
-**Basic Flow**:
-- [ ] Click generate on home screen
-- [ ] See progress: 0% → 25% → 50% → 75% → 100%
-- [ ] Messages update at each stage
-- [ ] After ~5 seconds, ritual completes
-- [ ] Toast shows "Ritual created!"
-- [ ] Ritual saved in RitualContext.state.rituals
-- [ ] Ritual persisted to localStorage
-
-**With Clarifying Question**:
-- [ ] Start generation
-- [ ] At 25%, modal appears with question
-- [ ] Answer with radio button selection
-- [ ] Submit answer
-- [ ] Modal closes, generation continues
-- [ ] Progress continues: 50% → 75% → 100%
-- [ ] Ritual completes successfully
-
-**Background Execution**:
-- [ ] Start generation
-- [ ] Navigate to /rituals tab
-- [ ] Generation continues (check console logs or background indicator)
-- [ ] After 5s, browser notification appears (if permission granted)
-- [ ] Toast notification always appears
-- [ ] Click notification → returns to /home or /rituals/:id
-
-**Error Cases**:
-- [ ] Try to generate without goal → validation error toast
-- [ ] Simulate network error → error toast with retry
-- [ ] Retry after error → works correctly
-
-**User Can Dismiss**:
-- [ ] Start generation
-- [ ] Click "Work in background" button
-- [ ] Progress UI hides
-- [ ] Generation continues
-- [ ] Toast shows "Working in background..."
-- [ ] Notification appears when complete
-
----
+**Expected**: Background generation completes in ~5s, state updates reactively, progress shown, notifications appear, ritual saved and persisted.
 
 ## Next Step
-
 Proceed to **Step 14: PWA Configuration**

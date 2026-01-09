@@ -1,206 +1,84 @@
 # Step 14: PWA Configuration
 
 ## Objective
-Make the app installable as a Progressive Web App and enable offline functionality for core features.
-
-## Why This Matters
-PWA capabilities provide:
-- **Native-like experience**: Install on home screen, full-screen mode
-- **Offline access**: View rituals and settings without connection
-- **Fast loading**: Cached app shell for instant startup
-- **Cross-platform**: Works on iOS, Android, and desktop with single codebase
-
----
+Make app installable as a Progressive Web App and enable offline functionality for core features.
 
 ## Key Tasks
 
 ### 14.1 Create Web App Manifest
-
 **File**: `public/manifest.json`
 
-**Required Properties**:
-- **name**: "Koru - Meditation Rituals"
-- **short_name**: "Koru"
-- **description**: Brief app description for app stores
-- **start_url**: "/" (entry point)
-- **display**: "standalone" (full-screen, no browser UI)
-- **orientation**: "portrait" (mobile-optimized)
-- **theme_color**: Peach-500 from design system
-- **background_color**: Warm-50 from design system
+**Required properties**: name ("Koru - Meditation Rituals"), short_name ("Koru"), description, start_url ("/"), display ("standalone"), orientation ("portrait"), theme_color (peach-500), background_color (warm-50), icons array (192x192, 512x512).
 
-**Icon Configuration**:
-- Array of icon objects with src, sizes, type, purpose
-- Sizes needed: 192x192 and 512x512 (minimum)
-- Purpose: "any maskable" for adaptive icons
-
-**Color Values**: See **UI_design.md §3 "Color Palette"** for exact hex codes
-- theme_color: Use peach-500
-- background_color: Use warm-50
+**Reference**: UI_design.md §3 for exact color hex codes (theme_color, background_color)
 
 ### 14.2 Generate App Icons
-
-**Files to Create**:
-- `public/icons/icon-192.png` (192x192) - Android small
-- `public/icons/icon-512.png` (512x512) - Android large, splash screen
-- `public/icons/apple-touch-icon.png` (180x180) - iOS home screen
+Create icons:
+- `public/icons/icon-192.png` (192×192) - Android small
+- `public/icons/icon-512.png` (512×512) - Android large, splash
+- `public/icons/apple-touch-icon.png` (180×180) - iOS
 - `public/icons/favicon.ico` - Browser tab
 
-**Design Guidelines**:
-- Simple, recognizable wordmark or symbol
-- Peaceful, minimal aesthetic matching brand
-- Peach accent color on warm/white background
-- Clear at small sizes (192px)
-- Safe area for maskable icons (80% center)
-
-**Tool Recommendations**:
-- Use Figma, Sketch, or design tool export
-- Or use PWA icon generator service
-- Ensure icons are optimized PNGs
+**Design**: Simple wordmark/symbol, peaceful aesthetic, peach accent on warm background, clear at small sizes, safe area for maskable icons (80% center).
 
 ### 14.3 Update HTML Meta Tags
-
 **File**: `index.html`
 
-**Add to `<head>`**:
-- Link to manifest.json
-- Apple touch icon link
-- iOS web app capable meta tag
-- iOS status bar style meta tag (default for light appearance)
+Add to `<head>`: manifest link, apple-touch-icon link, apple-mobile-web-app-capable meta, apple-mobile-web-app-status-bar-style meta (default).
 
-**Purpose**:
-- Manifest enables installation prompt
-- Apple tags ensure proper iOS behavior
-- Status bar style matches warm theme
+### 14.4 Configure Service Worker
+**File**: `vite.config.ts` (already configured in Step 01)
 
-### 14.4 Configure Service Worker Caching
-
-**File**: `vite.config.ts`
-
-**Already configured in Step 1**, but verify settings:
-
-**Update Strategy**:
-- Auto-update: App updates on next visit after new version
-- Prompt user option: Show "Update available" toast (future enhancement)
-
-**Precache Assets**:
-- App shell: HTML, CSS, bundled JavaScript
-- Static assets: Fonts (Lora, Inter), icons, images
-- Exclude: Large files, external resources
-
-**Caching Strategies**:
-- **App shell**: Cache-first (fast, reliable)
-- **Fonts/icons**: Cache-first (static resources)
-- **API calls**: Network-first (future - when backend exists)
-- **Runtime caching**: Cache visited routes dynamically
-
-**Offline Fallback**:
-- Show offline indicator if network unavailable
-- Disable generation button when offline
-- Allow viewing cached rituals and preferences
+**Verify settings**: Auto-update strategy, precache app shell (HTML/CSS/JS), cache fonts/icons (cache-first), API calls use network-first (future), offline fallback (disable generate button when offline).
 
 ### 14.5 Test Installation Flow
-
-**Chrome (Desktop)**:
-1. Run dev server: `pnpm dev`
-2. Look for install icon in address bar (⊕ or + symbol)
-3. Click install → app opens in standalone window
-4. Verify: No browser UI, custom window title
-
-**Safari (iOS)**:
-1. Open app in Safari
-2. Tap Share button → "Add to Home Screen"
-3. Tap Add → icon appears on home screen
-4. Launch app → opens full-screen without Safari UI
-5. Verify: Status bar matches theme color
-
-**Chrome (Android)**:
-1. Open app in Chrome
-2. Chrome menu (⋮) → "Install app" or "Add to Home Screen"
-3. Install → icon added to home screen
-4. Launch app → opens standalone
-5. Verify: Splash screen uses background_color and icon
-
----
+**Chrome Desktop**: Install icon in address bar → click → opens in app window (no browser UI)
+**Safari iOS**: Share → "Add to Home Screen" → full-screen launch
+**Chrome Android**: Menu → "Install app" → home screen icon → splash screen on launch
 
 ## Offline Functionality
 
-### What Works Offline (MVP)
+**Works offline**: App shell loads, view saved rituals, edit goal, browse quick starts, view/change preferences, navigate screens.
 
-**Available**:
-- App shell loads from cache
-- View saved rituals in library
-- Edit and update goal
-- Browse quick start rituals (pre-loaded)
-- View and change preferences
-- Navigate between screens
+**Requires online**: Generate new rituals (AI service), sync data (future), download new quick starts (future).
 
-**Graceful Degradation**:
-- "Generate" button shows disabled state with "Offline" message
-- Attempt to generate shows toast: "Generation requires internet connection"
-- Local changes sync when connection restored (future)
+**Graceful degradation**: Generate button shows "Offline" state with disabled appearance, attempt to generate shows toast: "Generation requires internet connection".
 
-### What Requires Online
+## Files to Modify
+- `public/manifest.json` - Web app manifest
+- `public/icons/*` - App icons (4 files)
+- `index.html` - Manifest + iOS meta tags
+- `vite.config.ts` - Verify PWA plugin (from Step 01)
 
-**Network-dependent features**:
-- Generate new rituals (AI service required)
-- Sync data to cloud (future - Phase 4)
-- Download new quick starts (future updates)
+## Test Plan
 
----
+**Automated Tests**:
+- [ ] Build process generates manifest.json in dist/
+- [ ] Service worker registers on app load
+- [ ] Cache storage populated with app shell assets
+- [ ] PWA manifest validation passes (Chrome DevTools)
+- [ ] Icons exist at specified paths and sizes
 
-## Files to Create/Modify
-
-- `/Users/amirdaygmail.com/projects/Koru/public/manifest.json` - Web app manifest
-- `/Users/amirdaygmail.com/projects/Koru/public/icons/icon-192.png` - Android small icon
-- `/Users/amirdaygmail.com/projects/Koru/public/icons/icon-512.png` - Android large icon
-- `/Users/amirdaygmail.com/projects/Koru/public/icons/apple-touch-icon.png` - iOS icon
-- `/Users/amirdaygmail.com/projects/Koru/public/icons/favicon.ico` - Browser favicon
-- `/Users/amirdaygmail.com/projects/Koru/index.html` - Add manifest and iOS meta tags
-- `/Users/amirdaygmail.com/projects/Koru/vite.config.ts` - Verify PWA plugin config from Step 1
-
----
-
-## Verification
-
-Test PWA installation and offline functionality:
-
-**Installation**:
-- [ ] Chrome desktop shows install prompt
-- [ ] Installation succeeds, opens in app window
+**Manual Verification**:
+- [ ] Chrome desktop shows install prompt in address bar
+- [ ] Click install → app opens in standalone window (no browser UI)
 - [ ] Safari iOS "Add to Home Screen" works
-- [ ] iOS app opens full-screen without Safari UI
+- [ ] iOS app launches full-screen without Safari UI
 - [ ] Android Chrome shows install banner
 - [ ] Android installation creates home screen icon
-
-**App Behavior**:
-- [ ] Installed app has correct name ("Koru")
-- [ ] App icon displays properly
+- [ ] Installed app displays correct name ("Koru") and icon
 - [ ] Theme color applied to status bar (mobile)
 - [ ] Splash screen shows on launch (Android)
-- [ ] No browser UI visible when installed
+- [ ] Disconnect network → app loads instantly from cache
+- [ ] Offline: Can navigate /home, /rituals, /profile
+- [ ] Offline: Can view saved rituals and edit goal
+- [ ] Offline: Generate button shows disabled/"Offline" state
+- [ ] Offline: Attempt generate shows helpful error toast
+- [ ] DevTools → Application → Service Workers shows active worker
+- [ ] DevTools → Application → Cache Storage shows assets cached
+- [ ] Change code, rebuild → app updates on next load
 
-**Offline Functionality**:
-- [ ] Disconnect network
-- [ ] App loads from cache (instant)
-- [ ] Can navigate between /home, /rituals, /profile
-- [ ] Can view saved rituals
-- [ ] Can edit goal (saves to localStorage)
-- [ ] Generate button shows disabled/"Offline" state
-- [ ] Attempt to generate shows helpful error message
-
-**Service Worker**:
-- [ ] Check DevTools → Application → Service Workers
-- [ ] Service worker registered and activated
-- [ ] Cache storage populated with app assets
-- [ ] Fonts and icons cached
-
-**Updates**:
-- [ ] Change app code and rebuild
-- [ ] Reload app → updates automatically (or shows prompt)
-- [ ] New version served correctly
-
----
+**Expected**: App installs on all platforms, works offline (except generation), caches assets properly, updates automatically.
 
 ## Next Step
-
 Proceed to **Step 15: Polish & Accessibility**

@@ -1,204 +1,84 @@
 # Step 12: HomeScreen Assembly
 
 ## Objective
-Combine all Home screen components into a complete, functional interface that enables goal management and ritual generation.
-
-## Why This Matters
-The Home screen is the primary MVP interface where users:
-- See and edit their current goal
-- Access quick-start rituals for immediate use
-- Generate custom rituals based on their goal
-- Experience the hybrid generation flow with progress and questions
-
----
+Combine all Home screen components into a complete interface enabling goal management and ritual generation.
 
 ## Key Tasks
 
 ### 12.1 Create HomeScreen Component
-
 **File**: `src/screens/Home/HomeScreen.tsx`
 
-**Overall Structure**:
-```
-<ScreenContainer>
-  <Header /> (optional greeting + streak indicator)
-  <GoalBox />
-  <QuickStartsSection />
-  <GenerateSection />
-  {isGenerating && <GenerationProgress />}
-  {clarifyingQuestion && <ClarifyingQuestionModal />}
-</ScreenContainer>
-```
+**Structure**: `ScreenContainer` wraps header (optional), `GoalBox`, quick starts section, generate section, conditionally render `GenerationProgress` (when `isGenerating`), conditionally render `ClarifyingQuestionModal` (when `clarifyingQuestion` exists).
 
-**Layout details**: See **UI_design.md §6 (Screen 1 - Home)** for complete specification
+**Reference**: UI_design.md §6 (Screen 1 - Home) for complete layout
 
-### 12.2 Header Section (Optional)
-
-**Content**:
-- Greeting: "Good [morning/afternoon/evening], [Name]" (if name available)
-- Streak indicator: "[X] day streak" (future - Phase 4)
-- For MVP: Can be minimal or omitted
-
-**Styling**:
-- Subtle, doesn't draw attention
-- Inter sans, small text
-- Calm-600 color
+### 12.2 Header (Optional for MVP)
+Greeting: "Good [morning/afternoon/evening]", Streak: "[X] days" (future - Phase 4). Styling: Subtle, Inter sans, calm-600 color.
 
 ### 12.3 Goal Box Section
-
-**Implementation**:
-- Render GoalBox component
-- Pass goal from AppContext
-- Pass updateGoal handler from AppContext
-- Section spacing: mb-6 or mb-8
-
-**Read from Context**:
-```
-const { state: { goal }, updateGoal } = useAppContext();
-```
+Render `GoalBox` component with `goal` from `AppContext`, pass `updateGoal` handler. Section spacing: mb-6 or mb-8.
 
 ### 12.4 Quick Starts Section
-
-**Layout**:
-- Section title: "Quick Starts" (h2, Lora serif)
-- Horizontal scrollable container
-- Render QuickStartCard for each quick start ritual
-- Spacing between cards: gap-4
-
-**Data Source**:
-- Import quick start rituals from `@/mocks/quickStarts`
-- 6 pre-made rituals with varying durations and intents
-
-**Interaction**:
-- onTap handler: For MVP, show toast "Session player coming soon"
-- Future (Phase 3): Navigate to `/session/:ritualId`
-
-**Responsive**:
-- Mobile: Horizontal scroll with snap
-- Tablet: Show 2-3 cards, scroll rest
-- Desktop: Flex wrap, show all 6 cards
+Section title "Quick Starts" (h2, Lora serif). Horizontal scrollable container with `QuickStartCard` for each ritual. Import from `@/mocks/quickStarts` (6 pre-made rituals). Gap-4 spacing. Responsive: mobile (horizontal scroll + snap), tablet (2-3 visible), desktop (flex wrap, show all). Tap handler: For MVP show toast "Session player coming soon", future navigate to `/session/:ritualId`.
 
 ### 12.5 Generate Section
-
-**Layout**:
-- Section title: "Generate" or omit (button is self-explanatory)
-- GenerateButton component
-- GenerationProgress component (conditional)
-
-**Generate Button Props**:
-- onGenerate: startGeneration from RitualContext
-- isGenerating: from RitualContext state
-- defaultDuration: from AppContext preferences
-- defaultTone: from AppContext preferences
-
-**Generation Progress** (Conditional Rendering):
-- Show when `RitualContext.state.isGenerating === true`
-- Pass progress from RitualContext.state.generationProgress
-- onDismiss: Hide progress UI, generation continues in background
+Render `GenerateButton` with props: `onGenerate` (RitualContext.startGeneration), `isGenerating` (RitualContext state), `defaultDuration`/`defaultTone` (AppContext preferences). Conditionally render `GenerationProgress` when `isGenerating === true`, pass `progress` from RitualContext, `onDismiss` hides UI.
 
 ### 12.6 Clarifying Question Modal
+Conditionally render when `clarifyingQuestion !== null`. Props: `question` (from RitualContext), `onAnswer` (RitualContext.answerClarifyingQuestion), `onCancel` (cancel generation, reset state).
 
-**Conditional Rendering**:
-- Show when `RitualContext.state.clarifyingQuestion !== null`
-- Modal overlays entire screen
+## State Management
 
-**Props**:
-- question: RitualContext.state.clarifyingQuestion
-- onAnswer: RitualContext.answerClarifyingQuestion
-- onCancel: Cancel generation, reset state
+**AppContext**: Read `goal`, `preferences`; use `updateGoal` action
 
----
+**RitualContext**: Read `isGenerating`, `generationProgress`, `clarifyingQuestion`; use `startGeneration`, `answerClarifyingQuestion` actions
 
-## State Management Integration
-
-**From AppContext**:
-```typescript
-const {
-  state: { goal, preferences },
-  updateGoal
-} = useAppContext();
-```
-
-**From RitualContext**:
-```typescript
-const {
-  state: { isGenerating, generationProgress, clarifyingQuestion },
-  startGeneration,
-  answerClarifyingQuestion
-} = useRitualContext();
-```
-
-**No Local State** needed - all managed in contexts
-
----
+**No local state needed** - all managed in contexts
 
 ## Event Handlers
 
-### handleGenerateClick
-- Gather options: goal, duration (from preferences or UI), tone, includeSilence
-- Validate goal exists and is not empty
-- Call `startGeneration(options)`
-- Progress updates handled automatically by context
+**handleGenerateClick**: Gather options (goal, duration, tone, includeSilence), validate goal exists, call `startGeneration(options)`
 
-### handleDismissProgress
-- Hide progress UI (local state or context flag)
-- Show toast: "Working in background..."
-- Generation continues asynchronously
+**handleDismissProgress**: Hide progress UI, show toast "Working in background...", generation continues async
 
-### handleAnswerQuestion
-- Pass answer to `answerClarifyingQuestion(answer)`
-- Context handles continuation of generation
-- Modal closes automatically when clarifyingQuestion becomes null
+**handleAnswerQuestion**: Call `answerClarifyingQuestion(answer)`, modal closes when state clears
 
-### handleQuickStartTap
-- For MVP: `toast.info("Session player coming in Phase 3")`
-- Future: Navigate to `/session/${ritual.id}`
+**handleQuickStartTap**: For MVP `toast.info("Session player coming in Phase 3")`
 
----
+## Files to Create
+- `src/screens/Home/HomeScreen.tsx`
 
-## Files to Create/Modify
+**Depends on**: Components from Step 11, AppContext/RitualContext (Step 5), ScreenContainer (Step 8), Toast (Step 7)
 
-- `/Users/amirdaygmail.com/projects/Koru/src/screens/Home/HomeScreen.tsx` - Main screen component
+## Test Plan
 
-**Depends on**:
-- All components from Step 11
-- AppContext from Step 5
-- RitualContext from Step 5
-- ScreenContainer from Step 8
-- Toast component from Step 7
+**Automated Tests**:
+- [ ] HomeScreen renders without errors
+- [ ] GoalBox receives correct props from AppContext
+- [ ] GenerateButton receives correct props from both contexts
+- [ ] Progress component conditionally renders based on isGenerating state
+- [ ] Modal conditionally renders based on clarifyingQuestion state
+- [ ] Quick starts map correctly (6 cards rendered)
 
----
-
-## Verification
-
-Test complete Home screen functionality:
-
-- [ ] Navigate to /home after completing onboarding
-- [ ] See goal box with onboarding goal
-- [ ] Click goal → edit mode works
-- [ ] Edit and blur → goal saves
-- [ ] See 6 quick start cards in carousel
-- [ ] Scroll quick starts horizontally (mobile)
-- [ ] Click quick start → see "coming soon" toast
-- [ ] See generate button with configuration
+**Manual Verification**:
+- [ ] Navigate to /home after onboarding → see goal box with goal
+- [ ] Click goal → edit mode, edit + blur → saves
+- [ ] See 6 quick start cards, scroll horizontally (mobile)
+- [ ] Click quick start → "coming soon" toast
+- [ ] Generate button shows config (duration/tone dropdowns)
 - [ ] Change duration/tone → updates immediately
-- [ ] Click generate → progress appears
-- [ ] Progress bar animates 0% → 25% → 50% → 75% → 100%
-- [ ] Messages update at each stage
-- [ ] After 25%, clarifying question modal appears
+- [ ] Click generate → progress appears, animates 0→100%
+- [ ] Stage messages update ("Clarifying" → "Structuring" → "Writing" → "Complete")
+- [ ] At 25%, clarifying modal appears (if enabled)
 - [ ] Answer question → modal closes, generation continues
-- [ ] Progress reaches 100% → toast "Ritual created!"
+- [ ] Progress 100% → toast "Ritual created!"
 - [ ] Click dismiss during progress → UI hides, generation continues
-- [ ] Navigate to other tab → generation continues
-- [ ] Notification appears when complete (if permission granted)
-- [ ] Refresh page during generation → state persists (if designed to)
+- [ ] Navigate to /rituals during generation → generation continues
+- [ ] Notification appears when complete
+- [ ] Try generate without goal → validation error
+- [ ] Refresh during generation → acceptable behavior (MVP: state lost)
 
-**Test error states**:
-- [ ] Try to generate without goal → validation error
-- [ ] Network error during generation → error toast with retry
-
----
+**Expected**: Complete Home screen works, all components integrate correctly, state flows through contexts, generation completes successfully with proper UI feedback.
 
 ## Next Step
-
 Proceed to **Step 13: Generation Flow Implementation**

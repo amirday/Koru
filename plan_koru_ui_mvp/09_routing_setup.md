@@ -1,145 +1,74 @@
-# Step 9: Routing Setup
+# Step 09: Routing Setup
 
 ## Objective
-Configure React Router v6 with navigation guards and app layout for the Koru meditation app.
-
-## Why This Matters
-Proper routing enables:
-- **Deep linking**: Direct navigation to specific screens
-- **Navigation guards**: Redirect unauthenticated users to onboarding
-- **Layout composition**: Shared layouts with bottom navigation
-- **Code splitting**: Lazy load routes for better performance (future)
-
----
+Configure React Router v6 with navigation guards and app layout for Koru.
 
 ## Key Tasks
 
-### 9.1 Define Route Structure
-
+### 9.1 Define Routes
 **File**: `src/router/routes.tsx`
 
-Create route hierarchy:
+**Onboarding** (no guard): `/welcome` → WelcomeScreen, `/setup` → InitialGoalSetupScreen
 
-**Onboarding Routes** (no authentication required):
-- `/welcome` → WelcomeScreen
-- `/setup` → InitialGoalSetupScreen
+**Main App** (requires onboarding complete): `/` → redirect /home, `/home` → HomeScreen (+ bottom nav), `/rituals` → PlaceholderScreen (+ bottom nav), `/dashboard` → PlaceholderScreen (+ bottom nav), `/profile` → PlaceholderScreen (+ bottom nav)
 
-**Main App Routes** (requires completed onboarding):
-- `/` → Redirect to /home
-- `/home` → HomeScreen (with bottom nav)
-- `/rituals` → Placeholder screen (with bottom nav)
-- `/dashboard` → Placeholder screen (with bottom nav)
-- `/profile` → Placeholder screen (with bottom nav)
+**Future** (Phase 2+): `/rituals/:id`, `/rituals/:id/edit`, `/session/:ritualId` (fullscreen, no nav), `/reflection/:sessionId`
 
-**Future Routes** (Phase 2+):
-- `/rituals/:id` → Ritual preview screen
-- `/rituals/:id/edit` → Ritual editor
-- `/session/:ritualId` → Session screen (fullscreen, no bottom nav)
-- `/reflection/:sessionId` → Reflection screen
+**Reference**: UI_design.md §2 for navigation model
 
-**Navigation model**: See **UI_design.md §2** for bottom tab bar structure
-
-### 9.2 Create Navigation Guard
-
+### 9.2 Navigation Guard
 **Component**: `RequireOnboarding`
 
-**Behavior**:
-- Check `hasCompletedOnboarding` from AppContext
-- If false → redirect to `/welcome`
-- If true → render children (protected routes)
+Check `hasCompletedOnboarding` from AppContext. If false → redirect `/welcome` (use Navigate with `replace={true}`). If true → render children.
 
-**Logic**:
-- Use Navigate component from react-router-dom for redirects
-- Set `replace={true}` to avoid back button issues
-
-### 9.3 Create App Layout
-
+### 9.3 App Layout
 **Component**: `AppLayout`
 
-**Structure**:
-- Renders `<Outlet />` for child routes
-- Includes `<BottomTabBar />` at bottom
-- Uses ScreenContainer for consistent padding
+Render `<Outlet />` for routes + `<BottomTabBar />` at bottom. Use ScreenContainer for padding. Bottom nav visibility: Show on /home, /rituals, /dashboard, /profile; hide on /session/:id, /reflection/:id (use `useLocation` to check path).
 
-**Bottom Nav Visibility**:
-- Show on: /home, /rituals, /dashboard, /profile
-- Hide on: /session/:id, /reflection/:id (fullscreen screens)
-- Use `useLocation` hook to determine current route
-
-### 9.4 Setup Router Configuration
-
+### 9.4 Router Configuration
 **File**: `src/router/index.tsx`
 
-Configure BrowserRouter with:
-- Route definitions wrapped in RequireOnboarding guard
-- AppLayout for main app routes
-- Standalone routes for onboarding
-
-**Router Provider**:
-- Export configured router
-- Import and use in App.tsx
+Configure BrowserRouter with route definitions wrapped in RequireOnboarding guard, AppLayout for main routes, standalone onboarding routes. Export router, import in App.tsx.
 
 ### 9.5 Update App Component
-
 **File**: `src/App.tsx`
 
-Transform from simple component to provider wrapper:
+Provider hierarchy: AppContextProvider (outer) → RitualContextProvider → Router. Order matters: AppContext must wrap RitualContext (goal/preferences needed for generation).
 
-**Structure**:
-1. AppContextProvider (outermost)
-2. RitualContextProvider
-3. Router (from src/router)
+### 9.6 Placeholder Screen
+**File**: `src/screens/PlaceholderScreen.tsx`
 
-**Why this order**: AppContext must wrap RitualContext (goal/preferences needed for generation)
+Simple screen with title (e.g., "Rituals"), message "Coming in Phase [N]", link to Home. Purpose: Test navigation + bottom tab functionality.
 
----
+## Files to Create
+- `src/router/routes.tsx`, `src/router/index.tsx`, `src/router/AppLayout.tsx`, `src/router/RequireOnboarding.tsx`, `src/screens/PlaceholderScreen.tsx`, `src/App.tsx` (update)
 
-## Placeholder Screen Component
+## Test Plan
 
-**For MVP**: Create simple placeholder for future screens
+**Automated Tests**:
+- [ ] RequireOnboarding redirects when onboarding incomplete
+- [ ] RequireOnboarding renders children when complete
+- [ ] AppLayout renders Outlet + BottomTabBar correctly
+- [ ] Route definitions compile without TypeScript errors
+- [ ] Router provider wraps app correctly in App.tsx
 
-**Content**:
-- Screen title (e.g., "Rituals", "Dashboard", "Profile")
-- Message: "Coming in Phase [N]"
-- Link back to Home
-
-**Purpose**: Test navigation and bottom tab bar functionality
-
----
-
-## Files to Create/Modify
-
-- `/Users/amirdaygmail.com/projects/Koru/src/router/routes.tsx` - Route definitions
-- `/Users/amirdaygmail.com/projects/Koru/src/router/index.tsx` - Router configuration
-- `/Users/amirdaygmail.com/projects/Koru/src/router/AppLayout.tsx` - Layout wrapper with bottom nav
-- `/Users/amirdaygmail.com/projects/Koru/src/router/RequireOnboarding.tsx` - Navigation guard
-- `/Users/amirdaygmail.com/projects/Koru/src/screens/PlaceholderScreen.tsx` - Temporary screen component
-- `/Users/amirdaygmail.com/projects/Koru/src/App.tsx` - Update with providers + router
-
----
-
-## Verification
-
-After implementing routing:
-
-- [ ] Navigate to http://localhost:5173
-- [ ] If onboarding not complete → redirects to /welcome
+**Manual Verification**:
+- [ ] Navigate to http://localhost:5173 (clear localStorage)
+- [ ] Redirects to /welcome (onboarding incomplete)
 - [ ] Complete onboarding → redirects to /home
-- [ ] Refresh page → stays on /home (persisted state)
-- [ ] Click bottom nav tabs → navigate between screens
-- [ ] Active tab has visual indicator
-- [ ] Browser back button works correctly
-- [ ] URL changes reflect current screen
-- [ ] Direct navigation to /dashboard works
-- [ ] Placeholder screens show proper content
+- [ ] Refresh page → stays on /home (state persisted)
+- [ ] Click bottom nav tab (Rituals) → navigate to /rituals
+- [ ] Active tab has visual indicator (peach color)
+- [ ] Click Dashboard tab → navigate to /dashboard
+- [ ] See placeholder "Coming in Phase X"
+- [ ] Browser back button works (goes back to previous route)
+- [ ] URL bar reflects current route
+- [ ] Direct navigate to /profile (paste URL) → works, shows placeholder
+- [ ] Clear localStorage, navigate to /home → redirects to /welcome
+- [ ] Bottom nav hidden on fullscreen routes (test when /session implemented)
 
-**Test onboarding guard**:
-- Clear localStorage
-- Navigate to /home
-- Should redirect to /welcome
-
----
+**Expected**: Routing works correctly, onboarding guard redirects properly, bottom nav shows on appropriate screens, state persists across navigation, browser back/forward work.
 
 ## Next Step
-
 Proceed to **Step 10: Onboarding Screens**

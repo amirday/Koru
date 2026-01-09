@@ -1,174 +1,96 @@
 # Step 15: Polish & Accessibility
 
 ## Objective
-Add animations, ensure accessibility, and test across devices.
+Add animations, ensure accessibility, and test across devices for production readiness.
 
 ## Key Tasks
 
 ### 15.1 Create Animations
-
 **File**: `src/styles/animations.css`
 
-**Animation Types to Implement**:
+**Animation types**: Page transitions (fade in, slide up), modal (fade + scale), toast (slide up from bottom). Durations: 200-250ms with ease-out easing. **CRITICAL**: Use `@media (prefers-reduced-motion: reduce)` to disable all animations with `animation: none !important`.
 
-**Page Transitions**:
-- Fade in: Simple opacity 0 → 1 transition
-- Slide up: Combine opacity with translateY for gentle entrance
-- Duration: 200-250ms (quick but not jarring)
-- Easing: ease-out for natural feel
+**Reference**: UI_design.md §3 "Animation & Motion" for philosophy (minimal approach, under 300ms, no continuous spinners)
 
-**Modal Animations**:
-- Fade in with subtle scale: opacity 0 → 1, scale 0.95 → 1
-- Duration: 200ms
-- Creates gentle "pop-in" effect
+### 15.2 Accessibility Requirements
+- **Semantic HTML**: Proper heading hierarchy (h1/h2/h3), semantic elements (nav/main/section), buttons not divs, proper form labels
+- **ARIA**: All interactive elements have labels, images have alt text, icons have aria-label, loading states announce to screen readers, error messages linked to fields (aria-describedby)
+- **Keyboard nav**: All interactive elements focusable, visible focus indicators, modals trap focus, Escape closes modals, Enter/Space activate buttons
+- **Color contrast**: Text on warm-50 meets WCAG AA (4.5:1), button text on peach-500 readable, links distinguishable, errors have sufficient contrast
 
-**Toast Notifications**:
-- Slide up from bottom: translateY(100%) → 0 with opacity
-- Duration: 250ms
-- Positions toast entering from bottom edge
+### 15.3 Responsive Design
+**Mobile (375px)**: No horizontal scroll, tap targets ≥44px, readable text without zoom, bottom nav accessible, modals fill viewport.
+**Tablet (768px)**: Layout adapts (2-3 cards visible), content not stretched.
+**Desktop (1024px+)**: Max-width 640px centered, quick starts wrap/show all, no awkward spacing.
 
-**CRITICAL: Respect Reduced Motion**:
-- Use `@media (prefers-reduced-motion: reduce)` to disable animations
-- Set `animation: none !important` for users who prefer no motion
-- This is required for accessibility compliance
-
-**Animation Guidelines**: See **UI_design.md §3 "Animation & Motion"** for philosophy:
-- Minimal approach: Only animate when adding clarity
-- Keep durations under 300ms
-- Use subtle easing (ease-out, ease-in-out)
-- Never animate continuously (no spinners during long operations)
-- Provide immediate state feedback without waiting for animations
-
-### 15.2 Accessibility Audit Checklist
-
-**Semantic HTML:**
-- [ ] Use proper heading hierarchy (h1, h2, h3)
-- [ ] Use semantic elements (nav, main, section, article)
-- [ ] Use button for clickable elements (not div)
-- [ ] Use proper form elements (label, input, textarea)
-
-**ARIA Labels:**
-- [ ] All interactive elements have labels
-- [ ] Images have alt text
-- [ ] Icons have aria-label
-- [ ] Loading states announce to screen readers
-- [ ] Error messages linked to form fields
-
-**Keyboard Navigation:**
-- [ ] All interactive elements focusable (tabindex)
-- [ ] Focus indicators visible and clear
-- [ ] Modal traps focus (can't tab outside)
-- [ ] Escape key closes modals
-- [ ] Enter/Space activate buttons
-
-**Color Contrast:**
-- [ ] Text on warm-50 background meets WCAG AA (4.5:1)
-- [ ] Button text on peach-500 meets contrast
-- [ ] Link text distinguishable from body text
-- [ ] Error messages have sufficient contrast
-
-**Screen Reader Testing:**
-- [ ] Test with VoiceOver (Mac/iOS)
-- [ ] Test with NVDA (Windows)
-- [ ] All content accessible
-- [ ] Navigation announced correctly
-- [ ] Form validation messages read aloud
-
-### 15.3 Responsive Design Testing
-
-**Mobile (375px):**
-- [ ] All content visible, no horizontal scroll
-- [ ] Tap targets minimum 44px
-- [ ] Text readable without zoom
-- [ ] Bottom nav accessible
-- [ ] Modals fill viewport
-
-**Tablet (768px):**
-- [ ] Layout adapts (2-3 cards visible)
-- [ ] Navigation remains accessible
-- [ ] Content not too stretched
-
-**Desktop (1024px+):**
-- [ ] Content max-width constrained (640px)
-- [ ] Centered layout
-- [ ] Quick starts wrap or show all
-- [ ] No awkward spacing
-
-### 15.4 Browser Testing
-
-Test in:
-- [ ] Chrome (latest)
-- [ ] Safari (latest, desktop + iOS)
-- [ ] Firefox (latest)
-- [ ] Edge (latest)
-- [ ] Samsung Internet (Android)
+### 15.4 Browser & Device Testing
+Test in: Chrome (latest), Safari (desktop + iOS), Firefox, Edge, Samsung Internet (Android).
 
 ### 15.5 Error Handling & Validation
+**Goal input**: 3-200 chars, trim whitespace, inline error message.
+**Generation**: Network error handling, timeout (30s) handling, validation before submit, retry mechanism.
+**Storage**: Handle quota exceeded, graceful degradation if localStorage unavailable, validate data on load.
 
-**Goal Input:**
-- [ ] Minimum 3 characters
-- [ ] Maximum 200 characters
-- [ ] Trim whitespace
-- [ ] Show error message
+### 15.6 Performance
+Lazy load routes (React.lazy), optimize images (WebP), minimize bundle, enable gzip, Lighthouse score target: 90+.
 
-**Generation:**
-- [ ] Network error handling
-- [ ] Timeout handling (30s)
-- [ ] Validation before submit
-- [ ] Retry mechanism
+## Test Plan
 
-**Storage:**
-- [ ] Handle quota exceeded
-- [ ] Graceful degradation if localStorage unavailable
-- [ ] Data validation on load
+**Automated Tests**:
+- [ ] Lighthouse: Performance ≥90, Accessibility ≥95, Best Practices ≥90, SEO ≥90
+- [ ] axe accessibility scan: No violations (run in CI or DevTools)
+- [ ] Bundle size: Main bundle < 200KB gzipped
+- [ ] Page load: First Contentful Paint < 1.5s, Time to Interactive < 3s
+- [ ] Type checking: `pnpm type-check` passes with no errors
+- [ ] Build: `pnpm build` completes without warnings
 
-### 15.6 Performance Optimization
+**Manual Verification - Accessibility**:
+- [ ] Test with VoiceOver (Mac/iOS): All content accessible, navigation announced
+- [ ] Test with NVDA (Windows): Form validation read aloud
+- [ ] Tab through entire app: Focus visible, logical order, no focus traps (except modals)
+- [ ] Keyboard only: Can navigate, activate buttons (Enter/Space), close modals (Escape)
+- [ ] Color contrast: Use DevTools or online checker for WCAG AA compliance
+- [ ] Zoom to 200%: Layout doesn't break, text remains readable
 
-- [ ] Lazy load routes (React.lazy)
-- [ ] Optimize images (use WebP)
-- [ ] Minimize bundle size
-- [ ] Enable gzip compression
-- [ ] Check Lighthouse score (target: 90+)
+**Manual Verification - Responsive**:
+- [ ] Mobile (iPhone SE 375px): All content fits, no horizontal scroll, tap targets adequate
+- [ ] Tablet (iPad 768px): Cards show 2-3, layout adapts properly
+- [ ] Desktop (1920px): Content centered max-width 640px, not stretched
+- [ ] Landscape orientation: Layout adjusts appropriately
+- [ ] Dynamic Island (iOS): Content doesn't overlap notch area
 
-### 15.7 Final QA Checklist
+**Manual Verification - Browser Compatibility**:
+- [ ] Chrome: All features work, no console errors
+- [ ] Safari (macOS): Fonts load, animations smooth, PWA installable
+- [ ] Safari (iOS): Touch gestures work, Add to Home Screen works, status bar correct color
+- [ ] Firefox: Layout consistent, service worker registers
+- [ ] Edge: No compatibility issues
+- [ ] Samsung Internet: PWA install works, layout correct
 
-**Onboarding Flow:**
-- [ ] Welcome screen displays correctly
-- [ ] Can complete goal setup
-- [ ] Preferences save correctly
-- [ ] Redirects to home after onboarding
-- [ ] Doesn't show onboarding on refresh
+**Manual Verification - Full App QA**:
+- [ ] **Onboarding**: Welcome → goal setup → home (completes successfully, doesn't re-show)
+- [ ] **Goal**: Edit, save, persists after refresh
+- [ ] **Quick starts**: Scroll horizontally, tap shows "coming soon"
+- [ ] **Generate**: Configure options, click generate, see progress, ritual created, notification shown
+- [ ] **Background**: Start generation, navigate away, returns, notification appears
+- [ ] **Navigation**: Bottom tabs switch screens, active tab indicated, back button works
+- [ ] **PWA**: Installable (all platforms), works offline (except generation), correct icon/splash
+- [ ] **Data**: Goal/preferences/rituals persist across sessions, localStorage readable in DevTools
+- [ ] **Errors**: No goal → validation, network error → retry, timeout → warning
 
-**Home Screen:**
-- [ ] Goal box editable and saves
-- [ ] Quick starts scroll horizontally
-- [ ] Generate button works
-- [ ] Progress shows during generation
-- [ ] Can navigate away during generation
-- [ ] Notification shows when complete
+**Manual Verification - Edge Cases**:
+- [ ] Clear localStorage → app resets gracefully, shows onboarding
+- [ ] Spam click generate → handles multiple requests gracefully
+- [ ] Navigate during generation → state persists, completes correctly
+- [ ] Dismiss progress UI → generation continues, notification works
+- [ ] Extremely long goal text (200+ chars) → validation prevents
+- [ ] No internet + generate → shows helpful offline message
+- [ ] Refresh during generation → acceptable behavior (MVP: generation lost)
 
-**Navigation:**
-- [ ] Bottom nav switches tabs
-- [ ] Active tab indicated
-- [ ] Back button works
-- [ ] Deep links work
-
-**PWA:**
-- [ ] Installable on all platforms
-- [ ] Works offline (app shell)
-- [ ] Icon displays correctly
-- [ ] Splash screen shows
-
-**Data Persistence:**
-- [ ] Goal persists across sessions
-- [ ] Preferences persist
-- [ ] Generated rituals saved
-- [ ] Onboarding state remembered
+**Expected**: App is accessible (WCAG AA), performant (Lighthouse 90+), responsive (375px-1920px), works in all major browsers, handles errors gracefully, data persists correctly.
 
 ## Completion Criteria
-
-All checklist items above pass. MVP is ready for user testing.
+All checklist items pass. MVP ready for user testing.
 
 ## Next Steps (Post-MVP)
-
 See master_plan.md for Phase 2 (Ritual Library & Editor) and beyond.

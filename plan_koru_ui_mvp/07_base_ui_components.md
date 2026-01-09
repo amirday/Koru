@@ -1,89 +1,46 @@
-# Step 7: Base UI Components
+# Step 07: Base UI Components
 
 ## Objective
-Build the design system's primitive components that form the foundation of all screens.
-
-## Why This Matters
-Reusable base components ensure:
-- **Visual consistency**: Same buttons, cards, inputs across all screens
-- **Accessibility**: Built-in focus states, ARIA labels, keyboard navigation
-- **Maintainability**: Change styling once, updates everywhere
-- **Speed**: Compose complex UIs from reliable primitives
+Build design system's primitive components that form the foundation of all screens.
 
 ## Files to Create
+`src/components/ui/`: Button, Card, Input, Slider, Toggle, Toast, Modal
 
-```
-src/components/ui/
-├── Button.tsx
-├── Card.tsx
-├── Input.tsx
-├── Slider.tsx
-├── Toggle.tsx
-├── Toast.tsx
-└── Modal.tsx
-```
+## Component Specs
+**Button**: Variants (primary/secondary/ghost/danger), sizes (sm/md/lg), states (default/hover/active/disabled/loading), icon support
+**Card**: Compound (Card.Header/Body/Footer), variants (default/elevated/flat), hover effect, clickable
+**Input**: Types (text/textarea/search), label/helper/error, auto-resize textarea, focus peach ring
+**Slider**: Styled track, value display, min/max/step, warm colors
+**Toggle**: Checkbox/switch variants, label positioning, indeterminate support
+**Toast**: Types (success/error/info/warning), auto-dismiss, bottom-center, queue (max 3), slide-up animation
+**Modal**: Backdrop blur, close on outside click, Escape key, focus trap, animate in/out
 
-## Component Specifications
+**Design Tokens**: See UI_design.md §3 (colors, spacing, typography), §4 (component patterns)
 
-### Button
-- Variants: primary (peach bg), secondary (warm outline), ghost (transparent), danger (error)
-- Sizes: sm, md, lg
-- States: default, hover, active, disabled, loading
-- Icon support (left/right)
+## Test Plan
 
-### Card
-- Compound component: Card, Card.Header, Card.Body, Card.Footer
-- Variants: default, elevated (shadow), flat (no shadow)
-- Hover effect (subtle elevation increase)
-- Clickable variant (cursor pointer)
+**Automated Tests**:
+- [ ] Button: Renders with correct variant class
+- [ ] Button: Disabled state prevents onClick
+- [ ] Card: Compound components render correctly
+- [ ] Input: Focus triggers peach ring style
+- [ ] Toggle: Checked state updates correctly
+- [ ] Toast: Auto-dismisses after duration
+- [ ] Modal: Escape key closes modal
 
-### Input
-- Types: text, textarea, search
-- Label, helper text, error message
-- Auto-resize for textarea
-- Focus states with peach ring
+**Manual Verification**:
+- [ ] Button: Click triggers handler, loading shows spinner
+- [ ] Button: Hover/active states visible
+- [ ] Card: Hover increases elevation
+- [ ] Input: Textarea auto-resizes as typing
+- [ ] Slider: Dragging updates value
+- [ ] Toggle: Click toggles state visually
+- [ ] Toast: Multiple toasts stack (max 3)
+- [ ] Toast: Slide-up animation smooth (or disabled if reduced motion)
+- [ ] Modal: Focus trapped inside, clicking backdrop closes
+- [ ] All components: Match warm color scheme (peach-500, warm-50)
 
-### Slider
-- Range input with styled track
-- Value display (optional)
-- Min/max/step props
-- Warm color scheme
-
-### Toggle
-- Checkbox and switch variants
-- Label positioning (left/right)
-- Indeterminate state support
-
-### Toast
-- Types: success (green), error (coral), info (peach), warning (amber)
-- Auto-dismiss with configurable duration
-- Position: bottom-center
-- Queue management (max 3 visible)
-- Slide-up animation (respect reduced motion)
-
-### Modal
-- Backdrop with blur effect
-- Close on outside click (configurable)
-- Escape key to close
-- Focus trap
-- Animate in/out (fade + scale)
-- Scrollable content area
-
-## Design Tokens Usage
-
-All components use Tailwind classes with design tokens:
-- **Colors**: peach-*, warm-*, calm-* (See **UI_design.md §3 "Color Palette"**)
-- **Spacing**: p-4, p-6, gap-4 (consistent spacing scale)
-- **Border radius**: rounded-card (gentle, approachable corners)
-- **Shadows**: shadow-card, shadow-elevated (subtle depth)
-- **Typography**: font-serif (Lora for headings), font-sans (Inter for body)
-
-**Component Pattern Philosophy**: See **UI_design.md §4 "Component System"** for:
-- Composition over configuration
-- Accessible by default
-- Warm visual language
-- Smart defaults with user control
+**Expected**: Components reusable, accessible (keyboard nav, ARIA), styled consistently with design tokens, work across all screens.
 
 ## Next Step
-
-Proceed to **Step 8: Layout Components**
+Proceed to **Step 08: Layout Components**

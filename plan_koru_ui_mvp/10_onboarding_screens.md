@@ -1,144 +1,72 @@
 # Step 10: Onboarding Screens
 
 ## Objective
-Build the first-run experience (Welcome + Goal Setup) that guides new users through initial configuration.
-
-## Why This Matters
-Effective onboarding:
-- **Sets expectations**: Clear value proposition
-- **Captures intent**: Goal-driven approach from the start
-- **Reduces friction**: Quick setup with smart defaults
-- **Starts generation**: First ritual created during onboarding
-
----
+Build first-run experience (Welcome + Goal Setup) that guides new users through initial configuration.
 
 ## Key Tasks
 
-### 10.1 Create Welcome Screen
-
+### 10.1 Welcome Screen
 **File**: `src/screens/Onboarding/WelcomeScreen.tsx`
 
-**Layout**:
-- Full-height centered container
-- Warm gradient background (warm-50 → gentle-yellow)
-- Vertical stack with spacing
+Full-height centered container, warm gradient background (warm-50 → gentle-yellow). Headline: "Build a ritual you'll actually repeat." (Lora serif, text-4xl). Subheading: "Goal-driven meditation that adapts to you." (Inter sans). Primary CTA: "Start" button (peach-500) → navigate to /setup. Secondary: "I already have a ritual" link (text-only, calm-600) → skip to /home, mark onboarding complete.
 
-**Content**:
-- **Headline**: "Build a ritual you'll actually repeat."
-- **Subheading**: "Goal-driven meditation that adapts to you."
-- **Primary CTA**: "Start" button → navigate to /setup
-- **Secondary action**: "I already have a ritual" link → skip to /home (marks onboarding complete)
+**Reference**: UI_design.md §5.1 (Screen 0 - Onboarding)
 
-**Styling**:
-- Use Lora serif for headline (text-4xl)
-- Inter sans for subheading
-- Primary button uses peach-500 background
-- Secondary link is text-only, calm-600 color
-
-**Complete specifications**: See **UI_design.md §5.1 (Screen 0 - Onboarding)**
-
-### 10.2 Create Goal Setup Screen
-
+### 10.2 Goal Setup Screen
 **File**: `src/screens/Onboarding/InitialGoalSetupScreen.tsx`
 
-**Layout**:
-- ScreenContainer wrapper
-- Progress indicator: "Almost there..." or simple step counter
-- Form sections with consistent spacing (gap-6)
+ScreenContainer wrapper, progress indicator ("Almost there..."), form sections (gap-6).
 
-**Form Sections**:
+**Form**:
+1. **Goal input**: Prompt "What do you want more of this month?", multi-line textarea (auto-focus), helper text "Short is fine. Clarity beats poetry.", suggestion chips (Focus/Calm/Confidence/Gratitude/Better sleep - tap to populate), min 3 chars validation
 
-**1. Goal Input**:
-- Prompt: "What do you want more of this month?"
-- Multi-line textarea with auto-focus
-- Helper text: "Short is fine. Clarity beats poetry."
-- Suggestion chips below input:
-  - "Focus", "Calm", "Confidence", "Gratitude", "Better sleep"
-  - Tap chip → populates textarea with that word
-- Min 3 characters validation
+2. **Duration**: Label "How much time do you have?", chip selector (5/10/15/20 min), default 10 min, peach-500 selected state
 
-**2. Duration Preference**:
-- Label: "How much time do you have?"
-- Chip selector (single choice): 5 / 10 / 15 / 20 min
-- Default: 10 min selected
-- Use peach-500 for selected state
+3. **Tone**: Label "What style feels right?", chip selector (Gentle - soft/nurturing, Neutral - clear/balanced, Coach - direct/motivating), default Gentle
 
-**3. Tone Preference**:
-- Label: "What style feels right?"
-- Chip selector with descriptions:
-  - "Gentle" - Soft, nurturing
-  - "Neutral" - Clear, balanced
-  - "Coach" - Direct, motivating
-- Default: Gentle selected
+4. **Submit**: "Create my first ritual" button (peach-500), disabled if goal empty or <3 chars, loading spinner during submission
 
-**4. Submit Button**:
-- Text: "Create my first ritual"
-- Primary button (peach-500)
-- Disabled if goal is empty or < 3 characters
-- Shows loading spinner during submission
+**On submit**: Validate (min 3 chars) → `AppContext.updateGoal(goalText)` → `AppContext.updatePreferences({ defaultDuration, defaultTone })` → `AppContext.completeOnboarding()` → `RitualContext.startGeneration(options)` (background) → navigate /home → user sees progress
 
-**Behavior on Submit**:
-1. Validate goal (min 3 characters)
-2. Call `AppContext.updateGoal(goalText)`
-3. Call `AppContext.updatePreferences({ defaultDuration, defaultTone })`
-4. Call `AppContext.completeOnboarding()`
-5. Call `RitualContext.startGeneration(options)` - starts in background
-6. Navigate to `/home`
-7. User sees generation progress on home screen
-
-**Complete specifications**: See **UI_design.md §5.2** for full form details
-
----
-
-## State Management
-
-**Read from AppContext**:
-- goal (if re-entering screen)
-- preferences (to show defaults)
-
-**Write to AppContext**:
-- updateGoal
-- updatePreferences
-- completeOnboarding
-
-**Trigger in RitualContext**:
-- startGeneration (with goal, duration, tone from form)
-
----
+**Reference**: UI_design.md §5.2 for full form specs
 
 ## Files to Create
+- `src/screens/Onboarding/WelcomeScreen.tsx`
+- `src/screens/Onboarding/InitialGoalSetupScreen.tsx`
 
-- `/Users/amirdaygmail.com/projects/Koru/src/screens/Onboarding/WelcomeScreen.tsx`
-- `/Users/amirdaygmail.com/projects/Koru/src/screens/Onboarding/InitialGoalSetupScreen.tsx`
+## State Management
+**Read**: `AppContext` goal, preferences
+**Write**: `AppContext.updateGoal`, `updatePreferences`, `completeOnboarding`; `RitualContext.startGeneration`
 
----
+## Test Plan
 
-## Verification
+**Automated Tests**:
+- [ ] WelcomeScreen renders headline + CTA
+- [ ] Goal setup form validates min 3 characters
+- [ ] Submit button disabled when goal invalid
+- [ ] Suggestion chips populate textarea correctly
+- [ ] Duration/tone selection updates state
+- [ ] On submit: AppContext actions called in order
+- [ ] Navigation to /home triggers after completeOnboarding
 
-After implementing onboarding:
-
-- [ ] Navigate to http://localhost:5173 (with no onboarding state)
-- [ ] See welcome screen with headline and CTA
-- [ ] Click "Start" → navigate to goal setup
-- [ ] Type goal text → see it update in textarea
-- [ ] Goal < 3 chars → submit button disabled
-- [ ] Click suggestion chip → goal populated
-- [ ] Select duration chip → visual state changes
+**Manual Verification**:
+- [ ] Navigate to http://localhost:5173 (clear localStorage first)
+- [ ] See welcome screen with headline "Build a ritual..."
+- [ ] Click "Start" → navigate to /setup
+- [ ] Type <3 chars → submit button disabled
+- [ ] Type ≥3 chars → submit button enabled
+- [ ] Click suggestion chip → goal populated in textarea
+- [ ] Select duration chip → visual state changes (peach background)
 - [ ] Select tone chip → visual state changes
-- [ ] Click submit → shows loading state
+- [ ] Click submit → loading spinner appears
 - [ ] After submit → navigates to /home
-- [ ] See generation progress on home screen
-- [ ] Refresh page → stays on /home (not back to welcome)
-- [ ] localStorage has `koru:onboarding_complete = true`
-- [ ] localStorage has `koru:goal` with submitted text
+- [ ] See generation progress on home screen (0→100%)
+- [ ] Refresh page → stays on /home (doesn't show welcome again)
+- [ ] DevTools → Application → localStorage → `koru:onboarding_complete = "true"`
+- [ ] localStorage → `koru:goal` → contains submitted text
+- [ ] Clear localStorage, reload, click "I already have a ritual" → skips to /home, marks complete
 
-**Test skip onboarding**:
-- On welcome screen, click "I already have a ritual"
-- Should navigate to /home
-- Should mark onboarding as complete
-
----
+**Expected**: Onboarding flow completes successfully, state persists, first ritual generation starts automatically, user doesn't see onboarding again after completion.
 
 ## Next Step
-
 Proceed to **Step 11: Home Screen Components**

@@ -1,214 +1,85 @@
-# Step 2: Core Data Models & Types
+# Step 02: Core Data Models & Types
 
 ## Objective
-Define TypeScript interfaces for all domain models, service contracts, and UI types to ensure type safety throughout the application.
-
-## Why This Matters
-Strong typing provides:
-- **Compile-time safety**: Catch errors before runtime
-- **IDE support**: Autocomplete, inline documentation
-- **Refactoring confidence**: Change detection across codebase
-- **Service contracts**: Clear interfaces enable pluggable implementations
-- **Documentation**: Types serve as living documentation
-
----
+Define TypeScript interfaces for domain models (Goal, Ritual, Session, Preferences) and service contracts (AIProvider, StorageAdapter) to ensure type safety throughout the application.
 
 ## Key Tasks
 
-### 2.1 Define Domain Models
-
+### 2.1 Domain Models
 **File**: `src/types/models.ts`
 
-Create TypeScript interfaces for core domain entities:
+**Goal**: `id`, `text`, `createdAt`, `updatedAt`
 
-**Goal**:
-- id, text, created/updated timestamps
-- Simple structure for user's current meditation goal
+**Ritual**: `id`, `title`, `intent`, `duration` (seconds), `tone` (gentle/neutral/coach), `pace` (slow/medium/fast), `includeSilence` (boolean), `soundscape` (optional), `sections` (array of RitualSection), `tags`, `isTemplate`, `isFavorite`, `usageCount`, `generatedFrom` (goal, prompt, modelVersion - optional), `createdAt`, `updatedAt`, `lastUsedAt`
 
-**Ritual**:
-- Basic info: id, title, intent, duration (seconds)
-- Configuration: tone (gentle/neutral/coach), pace (slow/medium/fast), includeSilence, soundscape
-- Structure: array of RitualSection
-- Metadata: tags, isTemplate, isFavorite, usageCount
-- AI context: generatedFrom (goal, prompt, modelVersion) - optional
-- Timestamps: createdAt, updatedAt, lastUsedAt
+**RitualSection**: `id`, `type` (intro/body/silence/transition/closing), `durationSeconds`, `guidanceText`, `silenceDuration` (for silence type), `soundscape` (optional per section)
 
-**RitualSection**:
-- id, name, duration, guidanceText, pauseDensity (0-100)
-- enabled flag, order number
-- variables object for runtime substitution (optional)
+**Session** (future - Phase 3): Links to Ritual, timing info, completion status, reflection, rating
 
-**Session** (future - Phase 3):
-- Links to Ritual, timing info, context, completion status
-- Snapshot of ritual at time of session
+**UserPreferences**: `defaultDuration` (seconds), `defaultTone`, `notifications` (boolean), `soundscapesEnabled`, `voice` (optional), `theme` (light/dark/auto - future)
 
-**Reflection** (future - Phase 4):
-- Session link, checkboxes, mood sliders, notes
-- Smart suggestions if user wants adjustments
+**Reference**: UI_design.md §15 for data model overview and relationships
 
-**Insight** (future - Phase 4):
-- Type (pattern/recommendation/achievement)
-- Based on session/reflection data
-
-**UserPreferences**:
-- Defaults: duration, tone, pace
-- Audio: soundscapeEnabled, defaultSoundscape, volume
-- UI: theme, reducedMotion, largeText
-- Notifications: remindersEnabled, time, days
-- Privacy: analyticsEnabled
-
-**Data model overview**: See **UI_design.md §15** for conceptual relationships
-
-### 2.2 Define Service Interfaces
-
+### 2.2 Service Interfaces
 **File**: `src/types/services.ts`
 
-Create interfaces for service abstraction layers:
+**AIProvider** interface: `generateRitual(options: AIGenerationOptions, onProgress: (progress: AIGenerationProgress) => void): Promise<Ritual>`, `askClarifyingQuestion(context): Promise<AIClarifyingQuestion | null>`
 
-**AIProvider Interface**:
-- Methods:
-  - `generateRitual(options, onProgress)` - Core generation with progress callbacks
-  - `askClarifyingQuestion(context)` - Interactive question during generation
-  - `refineRitualSection(section, instruction)` - Section-level adjustments
-  - `generateInsights(sessions, reflections)` - Future: Pattern detection
-- Input types: AIGenerationOptions, instruction types
-- Output types: AIClarifyingQuestion, AIGenerationProgress
-- Why: Enables swapping AI providers (mock → Claude → OpenAI) without code changes
+**AIGenerationOptions**: `goal`, `duration`, `tone`, `includeSilence`, `soundscape`
 
-**StorageAdapter Interface**:
-- CRUD methods: `get<T>`, `set<T>`, `delete`
-- Batch operations: `getMany<T>`, `setMany<T>`
-- Collection operations (future): `getAllKeys`, `clear`
-- Why: Supports migration path (localStorage → IndexedDB → cloud)
+**AIGenerationProgress**: `stage` (clarifying/structuring/writing/complete), `progress` (0-100), `message` (string)
 
-**BackgroundTask Types**:
-- Task status tracking (pending/running/completed/failed)
-- Callback types for success and error handling
-- Why: Enables async ritual generation with notifications
+**AIClarifyingQuestion**: `questionText`, `options` (string array), `allowCustomInput` (boolean)
 
-**Generation flow details**: See **UI_design.md §6.3** for 3-phase generation UX
+**StorageAdapter** interface: `get<T>(key): Promise<T | null>`, `set<T>(key, value): Promise<void>`, `remove(key): Promise<void>`, `clear(): Promise<void>`
 
-### 2.3 Define UI Types
+**Why**: Enables swapping AI providers (mock → Claude → OpenAI) and storage backends (localStorage → IndexedDB → cloud) without code changes
 
+### 2.3 UI Types
 **File**: `src/types/ui.ts`
 
-Create types for UI components:
+**Component Variants**: ButtonVariant (primary/secondary/ghost/danger), ButtonSize (sm/md/lg), CardVariant (default/elevated/flat), ToastType (success/error/info/warning)
 
-**Component Variants**:
-- ButtonVariant: primary, secondary, ghost, danger
-- ButtonSize: sm, md, lg
-- CardVariant: default, elevated, flat
-- ToastType: success, error, info, warning
+**Component Props**: ToastMessage (id, type, message, duration), ModalProps (isOpen, onClose, title, children, closeOnOutsideClick), FormFieldProps (label, error, helperText, required)
 
-**Component Props**:
-- ToastMessage: id, type, message, duration
-- ModalProps: isOpen, onClose, title, children, closeOnOutsideClick, showCloseButton
-- FormFieldProps: label, error, helperText, required
+**Navigation**: TabRoute (home/rituals/dashboard/profile), GenerationState (isGenerating, progress, stage, message, taskId)
 
-**Navigation & State**:
-- TabRoute: home, rituals, dashboard, profile
-- GenerationState: isGenerating, progress, stage, message, taskId
-
-**Design system**: See **UI_design.md §4** for component patterns
-
-### 2.4 Create Type Utilities
-
-**File**: `src/types/guards.ts`
-
-Implement helper functions:
-
-**Type Guards**:
-- `isRitual(value)` - Runtime type checking for Ritual objects
-- `isGoal(value)` - Runtime type checking for Goal objects
-- Useful for validating data loaded from storage
-
-**Serialization Helpers**:
-- `serializeDate(date)` - Convert Date to ISO string for storage
-- `deserializeDate(string)` - Parse ISO string back to Date
-- `cloneDeep<T>(obj)` - Deep copy utility for immutable updates
-
-### 2.5 Define Constants
-
+### 2.4 Constants
 **File**: `src/types/constants.ts`
 
-Create application constants:
+**Storage Keys**: Namespaced ('koru:goal', 'koru:preferences', 'koru:rituals') to prevent conflicts
 
-**Storage Keys**:
-- Namespaced keys for localStorage (e.g., "koru:goal", "koru:rituals")
-- Prevents conflicts with other apps
+**Option Arrays**: `RITUAL_TONES` (Gentle/Neutral/Coach), `RITUAL_DURATIONS` ([5, 10, 15, 20] min in seconds), `SOUNDSCAPES` (Ocean/Forest/Rain/Fire/None)
 
-**Option Arrays**:
-- DURATION_OPTIONS: [5, 10, 15, 20, 30] minutes
-- TONE_OPTIONS: ['gentle', 'neutral', 'coach']
-- PACE_OPTIONS: ['slow', 'medium', 'fast']
-- SOUNDSCAPE_OPTIONS: Rain, Ocean, Forest, White Noise, None (with file paths)
+**Default Preferences**: Duration 10 min, tone gentle, soundscapes enabled, notifications disabled
 
-**Default Preferences**:
-- Complete UserPreferences object with sensible defaults
-- Duration: 10 min, Tone: gentle, Pace: medium
-- Soundscape: enabled with auto-select
-- Theme: light, motion: normal
-- Reminders: disabled initially
-- Analytics: enabled
-
-**Animation Durations**:
-- FAST: 150ms, NORMAL: 250ms, SLOW: 350ms
-- Used with prefers-reduced-motion checks
-
-**Generation Stages**:
-- Array defining 4 stages with messages and progress percentages
-- See **UI_design.md §6.3** for staging details
-
----
-
-## Type Relationships
-
-```
-Goal (1)
-  ↓
-Ritual (many) ← contains → RitualSection (many)
-  ↓
-Session (many) ← links to → Ritual snapshot
-  ↓
-Reflection (1:1)
-  ↓
-Insight (generated from many reflections)
-```
-
-**Preferences** are global and don't link to specific entities.
-
----
+**Generation Stages**: Array with 4 stages, messages, progress percentages (see UI_design.md §6.3)
 
 ## Files to Create
+- `src/types/models.ts` - Domain models
+- `src/types/services.ts` - Service interfaces
+- `src/types/ui.ts` - UI types
+- `src/types/constants.ts` - App constants
 
-- `/Users/amirdaygmail.com/projects/Koru/src/types/models.ts` - Domain models
-- `/Users/amirdaygmail.com/projects/Koru/src/types/services.ts` - Service interfaces
-- `/Users/amirdaygmail.com/projects/Koru/src/types/ui.ts` - UI component types
-- `/Users/amirdaygmail.com/projects/Koru/src/types/guards.ts` - Type utilities
-- `/Users/amirdaygmail.com/projects/Koru/src/types/constants.ts` - App constants
+## Test Plan
 
----
+**Automated Tests**:
+- [ ] `pnpm type-check` passes with no errors
+- [ ] Import models in test file, TypeScript resolves correctly
+- [ ] Create mock objects that satisfy interfaces (compile-time check)
+- [ ] Constants are readonly and properly typed
+- [ ] No circular dependencies between type files
 
-## Verification
+**Manual Verification**:
+- [ ] Open `src/types/models.ts` in VS Code → no red squiggles
+- [ ] Hover over Ritual type → shows full interface with all properties
+- [ ] Use Ritual in component → autocomplete suggests all properties
+- [ ] Try assign invalid tone value → TypeScript error prevents
+- [ ] Check STORAGE_KEYS → all have 'koru:' prefix
+- [ ] Import AIProvider interface → can implement mock class
+- [ ] Use `@/types/...` path aliases → resolves correctly
 
-Run TypeScript compiler to check types:
-
-```bash
-pnpm lint
-```
-
-**Expected Results**:
-- [ ] All type files compile without errors
-- [ ] No circular dependencies
-- [ ] IDE provides autocomplete for all types
-- [ ] Import statements resolve correctly (use `@/types/...` aliases)
-- [ ] Exported types are available in other files
-
-**Testing imports**:
-Create a test file that imports each type to verify exports are correct.
-
----
+**Expected**: All types compile, interfaces are strict (no `any`), constants prevent typos, models match UI_design.md §15 relationships, service interfaces enable pluggable implementations.
 
 ## Next Step
-
-Proceed to **Step 3: Service Layer**
+Proceed to **Step 03: Service Layer**

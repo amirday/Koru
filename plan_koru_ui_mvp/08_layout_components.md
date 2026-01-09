@@ -1,79 +1,45 @@
-# Step 8: Layout Components
+# Step 08: Layout Components
 
 ## Objective
 Create consistent page structure and navigation components that wrap all screens.
 
-## Why This Matters
-Layout components provide:
-- **Consistent structure**: Every screen has safe padding and max-width
-- **Navigation model**: Bottom tabs for primary navigation (mobile-first)
-- **Safe areas**: Respects device notches and system UI
-- **Responsive behavior**: Adapts layout from mobile to desktop
-
 ## Files to Create
+`src/components/layout/`: ScreenContainer, BottomTabBar, Header
 
-```
-src/components/layout/
-├── ScreenContainer.tsx
-├── BottomTabBar.tsx
-└── Header.tsx
-```
+## Component Specs
 
-## Component Specifications
+**ScreenContainer**: Safe area padding (notches), max-width 640px centered (desktop), vertical scroll, bg warm-50, padding px-4 py-6
 
-### ScreenContainer
-- Safe area padding (top/bottom for notches)
-- Max width constraint (640px centered on desktop)
-- Vertical scroll container
-- Background: warm-50
-- Padding: px-4 py-6
+**BottomTabBar**: 4 tabs (Home/Rituals/Dashboard/Profile with icons), fixed bottom + safe-area-inset-bottom, active state (peach-500 + indicator), inactive (calm-500), icons + labels visible, hide on /session/:id + /reflection/:id, smooth animation
 
-### BottomTabBar
+**Icon names**: home/house, book/library, chart/bar-chart, user/person
 
-**4 Tabs** (See **UI_design.md §2 "Navigation Model"**):
-1. **Home** - House icon - Primary entry point
-2. **Rituals** - Book icon - Library of saved rituals
-3. **Dashboard** - Chart icon - Usage insights (future Phase 4)
-4. **Profile** - User icon - Settings and preferences
+**Header**: Optional back button (left), title (center, Lora serif), actions slot (right), sticky top, bg warm-50 + border-bottom, safe area top padding
 
-**Features:**
-- Fixed to bottom with safe-area-inset-bottom (respects iOS notch)
-- Active state: peach-500 color + subtle indicator line/underline
-- Inactive state: calm-500 color (muted but readable)
-- Icons + labels (both visible for clarity)
-- Hide on certain routes (session screen, reflection screen)
-- Smooth tab switch animation (respect prefers-reduced-motion)
+**Reference**: UI_design.md §2 (navigation model)
 
-**Icon Names** (for icon library):
-- Home: "home" or "house"
-- Rituals: "book" or "library"
-- Dashboard: "chart" or "bar-chart"
-- Profile: "user" or "person"
+## Test Plan
 
-### Header
-- Optional back button (left)
-- Optional title (center, Lora serif)
-- Optional actions slot (right)
-- Sticky positioning (top: 0)
-- Background: warm-50 with subtle border-bottom
-- Safe area top padding
+**Automated Tests**:
+- [ ] ScreenContainer: Renders children correctly
+- [ ] ScreenContainer: Applies max-width constraint
+- [ ] BottomTabBar: Renders 4 tabs
+- [ ] BottomTabBar: Active tab has peach-500 color
+- [ ] BottomTabBar: Click tab triggers navigation
+- [ ] Header: Conditional back button renders when provided
 
-## Conditional Bottom Nav
+**Manual Verification**:
+- [ ] ScreenContainer: Content centered on desktop (1920px wide)
+- [ ] ScreenContainer: Safe padding on iPhone notch
+- [ ] BottomTabBar: Fixed to bottom, doesn't scroll
+- [ ] BottomTabBar: Active tab visually distinct (peach color + indicator)
+- [ ] BottomTabBar: Tap tab → navigate to screen
+- [ ] BottomTabBar: Hidden on session screen (future)
+- [ ] BottomTabBar: Safe area inset respects iOS notch
+- [ ] Header: Sticky at top when scrolling
+- [ ] Header: Back button works (navigates back)
 
-**Navigation Philosophy**: See **UI_design.md §2** for context on when to show/hide navigation
-
-**Hide bottom nav on**:
-- `/session/:id` - Fullscreen immersive session player (no distractions)
-- `/reflection/:id` - Focus mode for reflection entry
-
-**Show bottom nav on**:
-- `/home` - Primary screen
-- `/rituals` - Library browsing
-- `/dashboard` - Insights viewing (future)
-- `/profile` - Settings and preferences
-
-**Implementation**: Use `useLocation()` hook to check current path and conditionally render BottomTabBar
+**Expected**: Layout consistent across screens, bottom nav works reliably, safe areas respected on all devices, navigation intuitive.
 
 ## Next Step
-
-Proceed to **Step 9: Routing Setup**
+Proceed to **Step 09: Routing Setup**
