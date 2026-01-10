@@ -49,4 +49,4 @@ A task is done only if:
 - Interactions look real (even if mocked).
 - Empty/loading/error states exist.
 - Styling matches the design system and stays consistent across screens.
-- All test passed and plan (if availble) completion and test status is updated. your job is to update the atuomated tests, and I will update the manuale tests. 
+- All test passed and plan (if availble) completion and test status is updated. your job is to update the atuomated tests, and I will update the manuale tests. rename once done rename the file to `<#setep>_done_<name>.md`
