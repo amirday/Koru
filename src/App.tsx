@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { RITUAL_TONES, DEFAULT_PREFERENCES } from '@/types'
 import { storageService, aiService, backgroundTaskService, notificationService } from '@/services'
+import { mockRituals, quickStarts } from '@/mocks'
 
 function App() {
   const [progress, setProgress] = useState(0)
@@ -116,7 +117,7 @@ function App() {
         </p>
 
         <div className="mt-8 px-6 py-3 bg-peach-500 text-white rounded-lg font-sans font-medium inline-block">
-          Phase 3 Complete ✓ (Service Layer)
+          Phase 4 Complete ✓ (Mock Data)
         </div>
 
         {/* Service Test Buttons */}
@@ -162,12 +163,47 @@ function App() {
           {taskId && <p className="mt-3 text-peach-600">Last task ID: {taskId}</p>}
         </div>
 
+        {/* Mock Data Info */}
+        <div className="mt-8 text-left bg-warm-100 p-4 rounded-lg space-y-3">
+          <p className="font-bold text-calm-800 text-sm">Mock Data Available:</p>
+
+          <div className="space-y-2 text-xs text-calm-700">
+            <div>
+              <p className="font-semibold text-calm-800">Rituals ({mockRituals.length}):</p>
+              <div className="pl-3 space-y-1 mt-1">
+                {mockRituals.slice(0, 4).map(ritual => (
+                  <p key={ritual.id}>
+                    • <strong>{ritual.title}</strong> ({Math.floor(ritual.duration / 60)}min, {ritual.tone})
+                    - {ritual.sections.length} sections, {ritual.tags.join(', ')}
+                  </p>
+                ))}
+                {mockRituals.length > 4 && (
+                  <p className="text-peach-600">+ {mockRituals.length - 4} more...</p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-calm-200">
+              <p className="font-semibold text-calm-800">Quick Starts ({quickStarts.length}):</p>
+              <div className="pl-3 space-y-1 mt-1">
+                {quickStarts.map(qs => (
+                  <p key={qs.id}>
+                    • <strong>{qs.title}</strong> ({Math.floor(qs.duration / 60)}min)
+                    - {qs.tags.join(', ')}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Type System Info */}
         <div className="mt-6 text-xs text-calm-600 space-y-1">
           <p className="font-semibold text-calm-800">Architecture:</p>
           <p>✓ Pluggable services (easy to swap implementations)</p>
           <p>✓ Type-safe interfaces from @/types</p>
           <p>✓ Async/Promise-based APIs</p>
+          <p>✓ Mock data with realistic content</p>
           <p>✓ Default tone: {DEFAULT_PREFERENCES.defaultTone}</p>
           <p>✓ Available tones: {RITUAL_TONES.map(t => t.label).join(', ')}</p>
         </div>
