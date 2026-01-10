@@ -13,7 +13,7 @@ console.log('🧪 Testing Mock Data...\n')
 function assert(condition: boolean, message: string) {
   if (!condition) {
     console.error(`❌ FAIL: ${message}`)
-    process.exit(1)
+    throw new Error(message)
   }
   console.log(`✓ ${message}`)
 }
@@ -23,7 +23,7 @@ console.log('Testing mockRituals:')
 assert(mockRituals.length >= 6, `Has at least 6 rituals (found ${mockRituals.length})`)
 assert(mockRituals.length <= 8, `Has at most 8 rituals (found ${mockRituals.length})`)
 
-mockRituals.forEach((ritual: Ritual, index: number) => {
+mockRituals.forEach((ritual: Ritual) => {
   const name = ritual.title
   assert(!!ritual.id, `[${name}] Has id`)
   assert(!!ritual.title, `[${name}] Has title`)
