@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApp, useRituals } from '@/contexts'
 import { useLocalStorage, useReducedMotion, useNotification, useRitual } from '@/hooks'
+import { Button, Card, Input, Slider, Toggle, Modal, useToast } from '@/components/ui'
 import { RITUAL_TONES } from '@/types'
 
 export function AppContent() {
@@ -13,6 +14,16 @@ export function AppContent() {
   const prefersReducedMotion = useReducedMotion()
   const notification = useNotification()
   const ritual = useRitual()
+
+  // Test UI components
+  const toast = useToast()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [inputValue, setInputValue] = useState('')
+  const [textareaValue, setTextareaValue] = useState('')
+  const [sliderValue, setSliderValue] = useState(50)
+  const [checkboxChecked, setCheckboxChecked] = useState(false)
+  const [switchChecked, setSwitchChecked] = useState(true)
+  const [buttonLoading, setButtonLoading] = useState(false)
 
   // Test updating goal
   const handleUpdateGoal = async () => {
@@ -108,6 +119,19 @@ export function AppContent() {
     }
   }
 
+  // Test UI components
+  const handleTestToasts = () => {
+    toast.showToast('success', 'Success! This is a success toast.')
+    setTimeout(() => toast.showToast('info', 'Info: This is an informational message.'), 500)
+    setTimeout(() => toast.showToast('warning', 'Warning: This is a warning toast.'), 1000)
+    setTimeout(() => toast.showToast('error', 'Error: This is an error toast.'), 1500)
+  }
+
+  const handleTestLoadingButton = () => {
+    setButtonLoading(true)
+    setTimeout(() => setButtonLoading(false), 2000)
+  }
+
   if (app.isLoading || rituals.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-warm-50">
@@ -127,7 +151,7 @@ export function AppContent() {
         </p>
 
         <div className="mt-8 px-6 py-3 bg-peach-500 text-white rounded-lg font-sans font-medium inline-block">
-          Phase 6 Complete ✓ (Custom Hooks)
+          Phase 7 Complete ✓ (Base UI Components)
         </div>
 
         {/* AppContext Test Section */}
@@ -294,12 +318,146 @@ export function AppContent() {
           </div>
         </div>
 
+        {/* UI Components Test Section */}
+        <div className="mt-6 text-left bg-warm-100 p-4 rounded-lg space-y-4">
+          <p className="font-bold text-calm-800 text-sm">UI Components (Step 7):</p>
+
+          {/* Button variants */}
+          <Card variant="elevated">
+            <Card.Header>
+              <h3 className="font-semibold text-calm-800 text-sm">Button Component</h3>
+            </Card.Header>
+            <Card.Body>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="primary" size="sm">Primary Small</Button>
+                <Button variant="secondary" size="md">Secondary Medium</Button>
+                <Button variant="ghost" size="lg">Ghost Large</Button>
+                <Button variant="danger">Danger</Button>
+                <Button variant="primary" loading={buttonLoading} onClick={handleTestLoadingButton}>
+                  {buttonLoading ? 'Loading...' : 'Test Loading'}
+                </Button>
+                <Button variant="primary" icon={<span>🔥</span>}>With Icon</Button>
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* Input component */}
+          <Card>
+            <Card.Header>
+              <h3 className="font-semibold text-calm-800 text-sm">Input Component</h3>
+            </Card.Header>
+            <Card.Body>
+              <div className="space-y-3">
+                <Input
+                  label="Text Input"
+                  placeholder="Type something..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  helperText="This is helper text"
+                />
+                <Input
+                  type="textarea"
+                  label="Textarea (Auto-resize)"
+                  placeholder="Type multiple lines..."
+                  value={textareaValue}
+                  onChange={(e) => setTextareaValue(e.target.value)}
+                  autoResize
+                  maxRows={8}
+                />
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* Slider component */}
+          <Card>
+            <Card.Header>
+              <h3 className="font-semibold text-calm-800 text-sm">Slider Component</h3>
+            </Card.Header>
+            <Card.Body>
+              <Slider
+                label="Duration"
+                min={0}
+                max={100}
+                value={sliderValue}
+                onChange={(e) => setSliderValue(Number(e.target.value))}
+                showValue
+                formatValue={(val) => `${val}%`}
+              />
+            </Card.Body>
+          </Card>
+
+          {/* Toggle components */}
+          <Card>
+            <Card.Header>
+              <h3 className="font-semibold text-calm-800 text-sm">Toggle Component</h3>
+            </Card.Header>
+            <Card.Body>
+              <div className="space-y-3">
+                <Toggle
+                  variant="checkbox"
+                  label="Checkbox Toggle"
+                  checked={checkboxChecked}
+                  onChange={(e) => setCheckboxChecked(e.target.checked)}
+                  helperText="This is a checkbox with helper text"
+                />
+                <Toggle
+                  variant="switch"
+                  label="Switch Toggle"
+                  checked={switchChecked}
+                  onChange={(e) => setSwitchChecked(e.target.checked)}
+                />
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* Toast and Modal */}
+          <Card variant="elevated">
+            <Card.Header>
+              <h3 className="font-semibold text-calm-800 text-sm">Toast & Modal</h3>
+            </Card.Header>
+            <Card.Body>
+              <div className="flex gap-2">
+                <Button variant="primary" onClick={handleTestToasts}>
+                  Show Toasts (4 types)
+                </Button>
+                <Button variant="secondary" onClick={() => setIsModalOpen(true)}>
+                  Open Modal
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* Modal */}
+          <Modal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            title="Test Modal"
+            size="md"
+            footer={
+              <>
+                <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" onClick={() => setIsModalOpen(false)}>
+                  Confirm
+                </Button>
+              </>
+            }
+          >
+            <p className="text-calm-700 text-sm">
+              This modal has a backdrop blur, focus trap, Escape key handler, and close on outside click.
+              Try pressing Tab to cycle through focusable elements, or Escape to close.
+            </p>
+          </Modal>
+        </div>
+
         {/* Architecture Info */}
         <div className="mt-6 text-xs text-calm-600 space-y-1">
           <p className="font-semibold text-calm-800">Architecture:</p>
           <p>✓ AppContext: Goal, preferences, onboarding state</p>
           <p>✓ RitualContext: Ritual library, generation, editing</p>
           <p>✓ Custom Hooks: localStorage, reduced motion, notification, ritual ops</p>
+          <p>✓ UI Components: Button, Card, Input, Slider, Toggle, Toast, Modal</p>
           <p>✓ Persistent storage via localStorage</p>
           <p>✓ Background task integration for generation</p>
           <p>✓ Type-safe context hooks (useApp, useRituals)</p>
