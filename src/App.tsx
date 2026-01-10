@@ -1,88 +1,175 @@
-import { RITUAL_TONES, DEFAULT_PREFERENCES, Timestamp } from '@/types'
-import type { Goal, RitualContent, RitualStatistics, Ritual } from '@/types'
+import { useState } from 'react'
+import { RITUAL_TONES, DEFAULT_PREFERENCES } from '@/types'
+import { storageService, aiService, backgroundTaskService, notificationService } from '@/services'
 
 function App() {
-  // Example: Create a Goal with Timestamp
-  const exampleGoal: Goal = {
-    id: 'example-1',
-    instructions: 'Find more calm in daily life',
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
+  const [progress, setProgress] = useState(0)
+  const [taskId, setTaskId] = useState<string | null>(null)
+
+  // Test Storage Service
+  const testStorage = async () => {
+    console.log('🗄️ Testing Storage Service...')
+
+    // Set a value
+    await storageService.set('test-key', { message: 'Hello from storage!', timestamp: Date.now() })
+    console.log('✓ Set test-key')
+
+    // Get the value
+    const value = await storageService.get<{ message: string; timestamp: number }>('test-key')
+    console.log('✓ Get test-key:', value)
+
+    // Get all keys
+    const keys = await storageService.keys()
+    console.log('✓ All koru keys:', keys)
+
+    alert('Storage test complete! Check console for details.')
   }
 
-  // Example: RitualContent (includes creation metadata)
-  const exampleContent: RitualContent = {
-    id: 'ritual-1',
-    title: 'Morning Calm',
-    instructions: 'Start the day with centered awareness',
-    duration: 600,
-    tone: 'gentle',
-    pace: 'medium',
-    includeSilence: true,
-    sections: [],
-    tags: ['morning', 'calm'],
-    isTemplate: false,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
+  // Test AI Service
+  const testAI = async () => {
+    console.log('🤖 Testing AI Service...')
+    setProgress(0)
+
+    try {
+      const ritual = await aiService.generateRitual(
+        {
+          instructions: 'Find more calm and focus in my daily work',
+          duration: 5 * 60, // 5 minutes
+          tone: 'gentle',
+          includeSilence: true,
+          soundscape: 'ocean',
+        },
+        (progressUpdate) => {
+          console.log(`Progress: ${progressUpdate.progress}% - ${progressUpdate.message}`)
+          setProgress(progressUpdate.progress)
+        }
+      )
+
+      console.log('✓ Generated ritual:', ritual)
+      alert(`Ritual generated: "${ritual.title}" with ${ritual.sections.length} sections!`)
+    } catch (error) {
+      console.error('✗ AI generation failed:', error)
+      alert('AI generation failed. Check console.')
+    }
   }
 
-  // Example: RitualStatistics (completely separate with own ID)
-  const exampleStats: RitualStatistics = {
-    id: 'stats-1',
-    ritualId: 'ritual-1',
-    isFavorite: true,
-    usageCount: 3,
-    lastUsedAt: Timestamp.now(),
+  // Test Background Task Service
+  const testBackgroundTask = async () => {
+    console.log('⏱️ Testing Background Task Service...')
+
+    const id = await backgroundTaskService.run('test-task', async () => {
+      // Simulate work
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      console.log('✓ Background task completed!')
+      return { result: 'Task successful' }
+    })
+
+    setTaskId(id)
+    console.log('✓ Task started with ID:', id)
+
+    // Check status after 1 second
+    setTimeout(async () => {
+      const task = await backgroundTaskService.getTask(id)
+      console.log('Task status after 1s:', task)
+    }, 1000)
+
+    // Check status after completion
+    setTimeout(async () => {
+      const task = await backgroundTaskService.getTask(id)
+      console.log('Task status after 3s:', task)
+      alert('Background task complete! Check console.')
+    }, 3500)
   }
 
-  // Example: Full Ritual with both content and statistics
-  const fullRitual: Ritual = {
-    ...exampleContent,
-    statistics: exampleStats,
+  // Test Notification Service
+  const testNotification = async () => {
+    console.log('🔔 Testing Notification Service...')
+
+    const supported = notificationService.isSupported()
+    console.log('✓ Notifications supported:', supported)
+
+    const permission = notificationService.getPermission()
+    console.log('✓ Current permission:', permission)
+
+    const success = await notificationService.notify({
+      title: 'Koru Test',
+      body: 'Notification service is working! 🎉',
+      icon: '/icon-192.png',
+    })
+
+    if (success) {
+      console.log('✓ Notification shown')
+    } else {
+      console.log('✗ Notification blocked or not supported')
+      alert('Notification blocked or not supported. Check console.')
+    }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-warm-50">
-      <div className="text-center max-w-2xl mx-auto px-4">
+      <div className="text-center max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-6xl font-serif font-bold text-peach-500 mb-4">
           Koru
         </h1>
         <p className="text-lg text-calm-700 font-sans">
           Meditation Rituals
         </p>
+
         <div className="mt-8 px-6 py-3 bg-peach-500 text-white rounded-lg font-sans font-medium inline-block">
-          Phase 2 Complete ✓ (Refactored Types)
+          Phase 3 Complete ✓ (Service Layer)
         </div>
-        <div className="mt-6 text-sm text-calm-600 space-y-2">
-          <p>Default tone: {DEFAULT_PREFERENCES.defaultTone}</p>
-          <p>Available tones: {RITUAL_TONES.map(t => t.label).join(', ')}</p>
-          <div className="mt-4 pt-4 border-t border-calm-200">
-            <p className="font-semibold text-calm-800">New Type Features:</p>
-            <p>✓ Branded Timestamp type for type safety</p>
-            <p>✓ Separated Ritual: Content + Statistics (separate IDs)</p>
-            <p>✓ Separated Session: Data + Reflection (separate IDs)</p>
-            <p>✓ Goal uses "instructions" field</p>
-            <p>✓ Creation metadata stays with content</p>
-            <p>✓ Usage statistics managed separately</p>
-          </div>
-          <div className="mt-4 pt-4 border-t border-calm-200 text-xs font-mono text-left bg-warm-100 p-3 rounded space-y-1">
-            <p className="font-bold text-calm-800">Example Goal:</p>
-            <p>→ instructions: "{exampleGoal.instructions}"</p>
-            <p>→ created: {Timestamp.parse(exampleGoal.createdAt).toLocaleString()}</p>
 
-            <p className="font-bold text-calm-800 mt-3">Example Ritual Content (id: {exampleContent.id}):</p>
-            <p>→ title: "{exampleContent.title}"</p>
-            <p>→ instructions: "{exampleContent.instructions}"</p>
-            <p>→ duration: {exampleContent.duration}s</p>
+        {/* Service Test Buttons */}
+        <div className="mt-8 space-y-3">
+          <p className="text-sm font-semibold text-calm-800 mb-4">Test Services (Check Console):</p>
 
-            <p className="font-bold text-calm-800 mt-3">Example Statistics (id: {exampleStats.id}):</p>
-            <p>→ ritualId: {exampleStats.ritualId}</p>
-            <p>→ isFavorite: {exampleStats.isFavorite ? 'true' : 'false'}</p>
-            <p>→ usageCount: {exampleStats.usageCount}</p>
+          <button
+            onClick={testStorage}
+            className="w-full px-4 py-3 bg-white border-2 border-peach-500 text-peach-500 rounded-lg font-sans font-medium hover:bg-peach-50 transition-colors"
+          >
+            🗄️ Test Storage Service
+          </button>
 
-            <p className="font-bold text-calm-800 mt-3">Full Ritual:</p>
-            <p>→ content + statistics.usageCount: {fullRitual.statistics?.usageCount}</p>
-          </div>
+          <button
+            onClick={testAI}
+            className="w-full px-4 py-3 bg-white border-2 border-peach-500 text-peach-500 rounded-lg font-sans font-medium hover:bg-peach-50 transition-colors"
+          >
+            🤖 Test AI Service {progress > 0 && `(${progress}%)`}
+          </button>
+
+          <button
+            onClick={testBackgroundTask}
+            className="w-full px-4 py-3 bg-white border-2 border-peach-500 text-peach-500 rounded-lg font-sans font-medium hover:bg-peach-50 transition-colors"
+          >
+            ⏱️ Test Background Task Service
+          </button>
+
+          <button
+            onClick={testNotification}
+            className="w-full px-4 py-3 bg-white border-2 border-peach-500 text-peach-500 rounded-lg font-sans font-medium hover:bg-peach-50 transition-colors"
+          >
+            🔔 Test Notification Service
+          </button>
+        </div>
+
+        {/* Service Info */}
+        <div className="mt-8 text-xs text-left bg-warm-100 p-4 rounded-lg space-y-2 text-calm-700">
+          <p className="font-bold text-calm-800">Services Available:</p>
+          <p>✓ <strong>Storage:</strong> LocalStorageAdapter with namespace (koru:)</p>
+          <p>✓ <strong>AI:</strong> MockAIProvider with progress callbacks</p>
+          <p>✓ <strong>Background Tasks:</strong> Async task execution with status tracking</p>
+          <p>✓ <strong>Notifications:</strong> Browser notifications with permission handling</p>
+          {taskId && <p className="mt-3 text-peach-600">Last task ID: {taskId}</p>}
+        </div>
+
+        {/* Type System Info */}
+        <div className="mt-6 text-xs text-calm-600 space-y-1">
+          <p className="font-semibold text-calm-800">Architecture:</p>
+          <p>✓ Pluggable services (easy to swap implementations)</p>
+          <p>✓ Type-safe interfaces from @/types</p>
+          <p>✓ Async/Promise-based APIs</p>
+          <p>✓ Default tone: {DEFAULT_PREFERENCES.defaultTone}</p>
+          <p>✓ Available tones: {RITUAL_TONES.map(t => t.label).join(', ')}</p>
         </div>
       </div>
     </div>

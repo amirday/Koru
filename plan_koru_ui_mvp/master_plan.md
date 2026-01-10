@@ -18,9 +18,9 @@ Build mobile-responsive PWA for goal-driven meditation with AI ritual generation
 
 | Step | Description | Key Deliverables |
 |---|---|---|
-| 01 | Project Setup | React+Vite+Tailwind+PWA, TypeScript strict, design tokens |
-| 02 | Data Models & Types | Timestamp type, Goal (instructions), Ritual (Content+Metadata), Session (Data+Reflection), AI/Storage contracts |
-| 03 | Service Layer | Storage (localStorage), AI (mock), background tasks, notifications |
+| ✅ 01 | Project Setup | React+Vite+Tailwind+PWA, TypeScript strict, design tokens |
+| ✅ 02 | Data Models & Types | Timestamp type, Goal (instructions), Ritual (Content+Statistics), Session (Data+Reflection), AI/Storage contracts |
+| ✅ 03 | Service Layer | Storage (localStorage), AI (mock), background tasks, notifications |
 | 04 | Mock Data | 6-8 rituals, 6 quick starts, varying tones/durations |
 | 05 | Context Providers | AppContext (goal/prefs), RitualContext (generation/library) |
 | 06 | Custom Hooks | useLocalStorage, useReducedMotion, useNotification, useRitual |
