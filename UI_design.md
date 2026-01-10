@@ -174,7 +174,7 @@ A goal-driven ritual generator that creates personalized meditation sessions, gu
 - Goal Box (editable, autosave)
 - Quick Start Card (carousel)
 - Primary CTA (Generate)
-- Ritual Card (title, intent, duration)
+- Ritual Card (title, instructions, duration)
 - Section Editor (accordion)
 - Session Player (pause / restart only)
 - Reflection Check-ins (checkboxes + slider)
@@ -346,7 +346,7 @@ A **structured editor**, not a free document.
   - Softer
   - More direct
 - Variables:
-  - {goal}
+  - {instructions} (user's meditation goal/intent)
   - {duration}
   - {tone}
 - Pause density slider
@@ -525,11 +525,57 @@ Examples:
 
 ## 15. Suggested Data Model (Conceptual)
 
-- Goal
-- Ritual (versioned)
-- Session
-- Reflection
-- Insight
+### Core Entities
+
+**Timestamp**: Type-safe branded string type for all dates (ISO 8601 format, JSON-compatible)
+
+**Goal**
+- id, instructions (what the user wants to achieve), createdAt, updatedAt
+- Storage key: `koru:goal`
+
+**Ritual** = RitualContent + Statistics
+- **RitualContent** (what it IS + creation metadata):
+  - id, title, instructions, duration, tone, pace, includeSilence, soundscape, sections[], tags, isTemplate, generatedFrom
+  - createdAt, updatedAt (metadata stays with content)
+  - Storage key: `koru:ritual:{id}`
+- **RitualStatistics** (usage stats - SEPARATE entity with OWN ID):
+  - id (own identity!), ritualId (reference), isFavorite, usageCount, lastUsedAt
+  - Storage key: `koru:ritual-stats:{id}`
+- **Separation allows**:
+  - Content immutable, statistics mutable
+  - Share content without personal usage data
+  - Different storage/sync strategies
+
+**Session** = SessionData + Reflection
+- **SessionData**:
+  - id, ritualId, status, startedAt, completedAt, progressSeconds
+  - Storage key: `koru:session:{id}`
+- **SessionReflection** (SEPARATE entity with OWN ID):
+  - id (own identity!), sessionId (reference), reflection, rating (1-5), createdAt
+  - Storage key: `koru:session-reflection:{id}`
+- **Separation allows**:
+  - Complete session without reflection
+  - Add/update reflection independently
+  - Privacy: share sessions without reflections
+
+**RitualSection**
+- id, type (intro/body/silence/transition/closing), durationSeconds, guidanceText, silenceDuration, soundscape
+
+**UserPreferences**
+- defaultDuration, defaultTone, notifications, soundscapesEnabled, voice, theme
+
+**Insight** (future)
+- Derived from Session and Reflection data for dashboard
+
+### Storage Strategy
+- **Local-first**: localStorage → IndexedDB → cloud sync (progressive migration)
+- **Namespaced keys**: All keys use 'koru:' prefix to prevent conflicts
+- **JSON serialization**: All types serialize cleanly for localStorage/API
+
+### Type Safety
+- **Branded Timestamp**: Compile-time safety, runtime compatibility
+- **Separated concerns**: Content vs metadata, data vs reflection
+- **Generic naming**: "instructions" field works for goals, rituals, generation
 
 
 **End of specification**

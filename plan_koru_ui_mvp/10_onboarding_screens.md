@@ -26,7 +26,7 @@ ScreenContainer wrapper, progress indicator ("Almost there..."), form sections (
 
 4. **Submit**: "Create my first ritual" button (peach-500), disabled if goal empty or <3 chars, loading spinner during submission
 
-**On submit**: Validate (min 3 chars) → `AppContext.updateGoal(goalText)` → `AppContext.updatePreferences({ defaultDuration, defaultTone })` → `AppContext.completeOnboarding()` → `RitualContext.startGeneration(options)` (background) → navigate /home → user sees progress
+**On submit**: Validate (min 3 chars) → `AppContext.updateGoal(goalText)` (creates Goal with .instructions field) → `AppContext.updatePreferences({ defaultDuration, defaultTone })` → `AppContext.completeOnboarding()` → `RitualContext.startGeneration({ instructions: goalText, ...options })` (background) → navigate /home → user sees progress
 
 **Reference**: UI_design.md §5.2 for full form specs
 
@@ -63,7 +63,7 @@ ScreenContainer wrapper, progress indicator ("Almost there..."), form sections (
 - [ ] See generation progress on home screen (0→100%)
 - [ ] Refresh page → stays on /home (doesn't show welcome again)
 - [ ] DevTools → Application → localStorage → `koru:onboarding_complete = "true"`
-- [ ] localStorage → `koru:goal` → contains submitted text
+- [ ] localStorage → `koru:goal` → Goal object with .instructions field containing submitted text
 - [ ] Clear localStorage, reload, click "I already have a ritual" → skips to /home, marks complete
 
 **Expected**: Onboarding flow completes successfully, state persists, first ritual generation starts automatically, user doesn't see onboarding again after completion.

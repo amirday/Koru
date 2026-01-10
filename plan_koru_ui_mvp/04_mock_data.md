@@ -9,7 +9,7 @@ Create realistic mock data for rituals and quick starts.
 
 ## Requirements
 
-Each ritual: Complete metadata (title, intent, duration, tone, pace), 3-5 sections with guidance text, realistic durations (5-20 min), various tones (gentle/neutral/coach), tags (Focus/Calm/Confidence/Gratitude/Sleep/Breath/Body)
+Each ritual: Complete metadata (title, instructions, duration, tone, pace), 3-5 sections with guidance text, realistic durations (5-20 min), various tones (gentle/neutral/coach), tags (Focus/Calm/Confidence/Gratitude/Sleep/Breath/Body), separated content and metadata (RitualContent + RitualMetadata)
 
 **Example Quick Starts**:
 1. **Reset** (3 min) - "For anxious moments" - Breath
@@ -34,7 +34,7 @@ Each ritual: Complete metadata (title, intent, duration, tone, pace), 3-5 sectio
 - [ ] Check section guidance text → realistic, grammatically correct
 - [ ] Quick starts: 6 distinct rituals with varying durations
 - [ ] Tones vary across rituals (not all "gentle")
-- [ ] Tags make sense for each ritual's intent
+- [ ] Tags make sense for each ritual's instructions/purpose
 
 **Expected**: Mock data realistic and complete, satisfies TypeScript interfaces, provides variety for testing UI components.
 

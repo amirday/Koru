@@ -8,7 +8,7 @@ Implement end-to-end ritual generation in RitualContext with background executio
 ### 13.1 Implement startGeneration Action
 **File**: `src/contexts/RitualContext.tsx`
 
-**Core responsibilities**: Validate inputs (goal, duration), generate task ID, update state (`isGenerating = true`), call background service, handle progress callbacks, handle clarifying questions, save ritual on completion, show notifications.
+**Core responsibilities**: Validate inputs (instructions, duration), generate task ID, update state (`isGenerating = true`), call background service, handle progress callbacks, handle clarifying questions, save ritual on completion, show notifications. Uses AIGenerationOptions with .instructions field.
 
 **Integration points**:
 - `backgroundTaskService.startTask()` - Async execution
@@ -64,7 +64,7 @@ Simulate staged delays (~1.5s/stage), call `onProgress` callback at each stage, 
 - [ ] Ritual appears in RitualContext.state.rituals
 - [ ] Refresh page → ritual persisted in localStorage
 - [ ] Click "Work in background" → progress UI hides, generation continues
-- [ ] Try generate without goal → validation error toast
+- [ ] Try generate without instructions → validation error toast
 - [ ] Simulate network error → retry option works
 
 **Expected**: Background generation completes in ~5s, state updates reactively, progress shown, notifications appear, ritual saved and persisted.

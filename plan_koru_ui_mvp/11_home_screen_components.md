@@ -8,9 +8,9 @@ Build specialized components for Home screen: Goal editing, Quick Start rituals,
 ### 11.1 Goal Box Component
 **File**: `src/components/cards/GoalBox.tsx`
 
-Editable card for user's current goal. Display mode shows goal text + pencil icon. Edit mode shows auto-resize textarea. Auto-save on blur (debounced). Empty state: "Tap to set your goal" with helper text "Short is fine. Clarity beats poetry." Warm card background (gentle-yellow/warm-100), Lora serif for display, Inter sans for edit.
+Editable card for user's current meditation goal. Display mode shows goal.instructions text + pencil icon. Edit mode shows auto-resize textarea. Auto-save on blur (debounced). Empty state: "Tap to set your goal" with helper text "Short is fine. Clarity beats poetry." Warm card background (gentle-yellow/warm-100), Lora serif for display, Inter sans for edit.
 
-**Props**: `goal: Goal | null`, `onUpdate: (text: string) => void`
+**Props**: `goal: Goal | null`, `onUpdate: (instructions: string) => void` (updates Goal.instructions field)
 
 **Reference**: UI_design.md §6.1 for Goal Box specs
 
