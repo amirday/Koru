@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+/* Font loading - Lora and Inter from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Tailwind CSS 4.x Theme Configuration */
+@theme {
+  /* Custom colors */
+  --color-peach-50: #FFF5EE;
+  --color-peach-100: #FFE8D9;
+  --color-peach-200: #FFD1B3;
+  --color-peach-300: #FFBA8D;
+  --color-peach-400: #FFA866;
+  --color-peach-500: #FF9A54;
+  --color-peach-600: #E67B3A;
+  --color-peach-700: #CC5C21;
+  --color-peach-800: #B34209;
+  --color-peach-900: #992E00;
+
+  --color-warm-50: #FFFCF8;
+  --color-warm-100: #FFF8F0;
+  --color-warm-200: #FFF3E8;
+  --color-warm-300: #FFE8D0;
+  --color-warm-400: #FFE0C0;
+  --color-warm-500: #FFD8B0;
+  --color-warm-600: #F5C89A;
+  --color-warm-700: #E5B884;
+  --color-warm-800: #D5A86E;
+  --color-warm-900: #C59858;
+
+  --color-gentle-yellow: #FFF9E6;
+
+  --color-calm-50: #F9F9F8;
+  --color-calm-100: #F0F0EF;
+  --color-calm-200: #E0E0DF;
+  --color-calm-300: #C8C8C7;
+  --color-calm-400: #A0A09F;
+  --color-calm-500: #787877;
+  --color-calm-600: #5A5A59;
+  --color-calm-700: #3C3C3B;
+  --color-calm-800: #2E2E2D;
+  --color-calm-900: #252527;
+
+  --color-success: #A3D9B1;
+  --color-warning: #FFD8B0;
+  --color-error: #FFB3BA;
+
+  /* Custom fonts */
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Custom spacing */
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+
+  /* Custom border radius */
+  --radius-card: 1rem;
+  --radius-card-lg: 1.25rem;
+
+  /* Custom shadows */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* CSS Variables for dynamic theming */
+:root {
+  --color-peach: #FF9A54;
+  --color-warm-bg: #FFFCF8;
+  --color-gentle-yellow: #FFF9E6;
+  --color-calm-text: #252527;
+}
+
+/* Base styles */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #252527;
+  background-color: #FFFCF8;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Heading defaults */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Lora', Georgia, serif;
+}
+
+/* Focus visible styles for accessibility */
+*:focus-visible {
+  outline: 3px solid #FF9A54;
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Safe area spacing for mobile notches */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background-color: #FFF8F0;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #FFE8D0;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #FFE0C0;
+}
+
+/* Text gradient utility */
+.text-gradient-peach {
+  background: linear-gradient(to right, #FFA866, #E67B3A);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 252, 248, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
