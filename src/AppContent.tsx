@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { useApp, useRituals } from '@/contexts'
+import { useLocalStorage, useReducedMotion, useNotification, useRitual } from '@/hooks'
 import { RITUAL_TONES } from '@/types'
 
 export function AppContent() {
   const app = useApp()
   const rituals = useRituals()
   const [newGoalText, setNewGoalText] = useState('')
+
+  // Test custom hooks
+  const [testValue, setTestValue] = useLocalStorage('test-value', 'default')
+  const prefersReducedMotion = useReducedMotion()
+  const notification = useNotification()
+  const ritual = useRitual()
 
   // Test updating goal
   const handleUpdateGoal = async () => {
@@ -71,6 +78,36 @@ export function AppContent() {
     }
   }
 
+  // Test useLocalStorage hook
+  const handleTestLocalStorage = () => {
+    const newValue = `Value at ${new Date().toLocaleTimeString()}`
+    setTestValue(newValue)
+    alert(`Set test value: ${newValue}`)
+  }
+
+  // Test useNotification hook
+  const handleTestNotification = async () => {
+    const success = await notification.notify({
+      title: 'Hook Test',
+      body: 'useNotification hook is working!',
+      icon: '/icon-192.png',
+    })
+    if (!success) {
+      alert('Notification blocked or not supported')
+    }
+  }
+
+  // Test useRitual hook
+  const handleToggleFavorite = async () => {
+    if (rituals.rituals.length === 0) return
+    try {
+      await ritual.toggleFavorite(rituals.rituals[0]!.id)
+      alert('Toggled favorite status!')
+    } catch (error) {
+      alert('Failed to toggle favorite. Check console.')
+    }
+  }
+
   if (app.isLoading || rituals.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-warm-50">
@@ -90,7 +127,7 @@ export function AppContent() {
         </p>
 
         <div className="mt-8 px-6 py-3 bg-peach-500 text-white rounded-lg font-sans font-medium inline-block">
-          Phase 5 Complete ✓ (Context Providers)
+          Phase 6 Complete ✓ (Custom Hooks)
         </div>
 
         {/* AppContext Test Section */}
@@ -207,11 +244,62 @@ export function AppContent() {
           </div>
         </div>
 
+        {/* Custom Hooks Test Section */}
+        <div className="mt-6 text-left bg-warm-100 p-4 rounded-lg space-y-3">
+          <p className="font-bold text-calm-800 text-sm">Custom Hooks Status:</p>
+          <div className="text-xs text-calm-700 space-y-2">
+            <p>
+              <strong>useLocalStorage:</strong> {testValue}
+            </p>
+            <p>
+              <strong>useReducedMotion:</strong> {prefersReducedMotion ? 'Enabled' : 'Disabled'}
+            </p>
+            <p>
+              <strong>useNotification:</strong> {notification.isSupported ? `Permission: ${notification.permission}` : 'Not supported'}
+            </p>
+            <p>
+              <strong>useRitual:</strong> Available (toggle favorite, record usage, etc.)
+            </p>
+          </div>
+
+          <div className="space-y-2 mt-4">
+            <p className="font-semibold text-calm-800 text-xs">Test Custom Hooks:</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleTestLocalStorage}
+                className="px-3 py-2 bg-white border-2 border-peach-500 text-peach-500 text-xs rounded-lg hover:bg-peach-50 transition-colors"
+              >
+                Test useLocalStorage
+              </button>
+              <button
+                onClick={handleTestNotification}
+                className="px-3 py-2 bg-white border-2 border-peach-500 text-peach-500 text-xs rounded-lg hover:bg-peach-50 transition-colors"
+              >
+                Test useNotification
+              </button>
+              <button
+                onClick={handleToggleFavorite}
+                className="px-3 py-2 bg-white border-2 border-peach-500 text-peach-500 text-xs rounded-lg hover:bg-peach-50 transition-colors"
+                disabled={rituals.rituals.length === 0}
+              >
+                Toggle First Favorite
+              </button>
+              <button
+                onClick={() => alert(`Motion: ${prefersReducedMotion ? 'Reduced' : 'Full'}`)}
+                className="px-3 py-2 bg-white border-2 border-peach-500 text-peach-500 text-xs rounded-lg hover:bg-peach-50 transition-colors"
+              >
+                Check Motion Pref
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Architecture Info */}
         <div className="mt-6 text-xs text-calm-600 space-y-1">
           <p className="font-semibold text-calm-800">Architecture:</p>
           <p>✓ AppContext: Goal, preferences, onboarding state</p>
           <p>✓ RitualContext: Ritual library, generation, editing</p>
+          <p>✓ Custom Hooks: localStorage, reduced motion, notification, ritual ops</p>
           <p>✓ Persistent storage via localStorage</p>
           <p>✓ Background task integration for generation</p>
           <p>✓ Type-safe context hooks (useApp, useRituals)</p>

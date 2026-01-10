@@ -23,7 +23,7 @@ Build mobile-responsive PWA for goal-driven meditation with AI ritual generation
 | ✅ 03 | Service Layer | Storage (localStorage), AI (mock), background tasks, notifications |
 | ✅ 04 | Mock Data | 8 rituals, 6 quick starts, varying tones/durations, realistic content |
 | ✅ 05 | Context Providers | AppContext (goal/prefs), RitualContext (generation/library) |
-| 06 | Custom Hooks | useLocalStorage, useReducedMotion, useNotification, useRitual |
+| ✅ 06 | Custom Hooks | useLocalStorage, useReducedMotion, useNotification, useRitual, useBackgroundTask |
 | 07 | Base UI Components | Button, Card, Input, Toggle, Toast, Modal (design system primitives) |
 | 08 | Layout Components | ScreenContainer, BottomTabBar (4 tabs), Header |
 | 09 | Routing | React Router v6, RequireOnboarding guard, AppLayout |
