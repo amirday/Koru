@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useApp, useRituals } from '@/contexts'
 import { useLocalStorage, useReducedMotion, useNotification, useRitual } from '@/hooks'
 import { Button, Card, Input, Slider, Toggle, Modal, useToast } from '@/components/ui'
-import { RITUAL_TONES } from '@/types'
+import { ScreenContainer, BottomTabBar, Header } from '@/components/layout'
+import { RITUAL_TONES, type TabRoute } from '@/types'
 
 export function AppContent() {
   const app = useApp()
@@ -24,6 +25,11 @@ export function AppContent() {
   const [checkboxChecked, setCheckboxChecked] = useState(false)
   const [switchChecked, setSwitchChecked] = useState(true)
   const [buttonLoading, setButtonLoading] = useState(false)
+
+  // Test layout components
+  const [activeTab, setActiveTab] = useState<TabRoute>('home')
+  const [showTabBar, setShowTabBar] = useState(true)
+  const [showHeader, setShowHeader] = useState(false)
 
   // Test updating goal
   const handleUpdateGoal = async () => {
@@ -141,18 +147,35 @@ export function AppContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-warm-50">
-      <div className="text-center max-w-3xl mx-auto px-4 py-8">
-        <h1 className="text-6xl font-serif font-bold text-peach-500 mb-4">
-          Koru
-        </h1>
-        <p className="text-lg text-calm-700 font-sans">
-          Meditation Rituals
-        </p>
+    <>
+      {/* Optional header */}
+      {showHeader && (
+        <Header
+          title="Koru"
+          onBack={() => alert('Back clicked')}
+          actions={
+            <button className="text-calm-700 hover:text-calm-900">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+            </button>
+          }
+        />
+      )}
 
-        <div className="mt-8 px-6 py-3 bg-peach-500 text-white rounded-lg font-sans font-medium inline-block">
-          Phase 7 Complete ✓ (Base UI Components)
-        </div>
+      {/* Screen container wraps all content */}
+      <ScreenContainer showTabBarPadding={showTabBar}>
+        <div className="text-center max-w-3xl mx-auto">
+          <h1 className="text-6xl font-serif font-bold text-peach-500 mb-4">
+            Koru
+          </h1>
+          <p className="text-lg text-calm-700 font-sans">
+            Meditation Rituals
+          </p>
+
+          <div className="mt-8 px-6 py-3 bg-peach-500 text-white rounded-lg font-sans font-medium inline-block">
+            Phase 8 Complete ✓ (Layout Components)
+          </div>
 
         {/* AppContext Test Section */}
         <div className="mt-8 text-left bg-warm-100 p-4 rounded-lg space-y-3">
@@ -451,6 +474,69 @@ export function AppContent() {
           </Modal>
         </div>
 
+        {/* Layout Components Test Section */}
+        <div className="mt-6 text-left bg-warm-100 p-4 rounded-lg space-y-4">
+          <p className="font-bold text-calm-800 text-sm">Layout Components (Step 8):</p>
+
+          <Card variant="elevated">
+            <Card.Header>
+              <h3 className="font-semibold text-calm-800 text-sm">ScreenContainer</h3>
+            </Card.Header>
+            <Card.Body>
+              <p className="text-xs text-calm-700 mb-3">
+                Currently wrapping this entire test page. Features: safe area padding, max-width 640px centered, vertical scroll.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowTabBar(!showTabBar)}
+                >
+                  {showTabBar ? 'Hide' : 'Show'} Tab Bar Padding
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+
+          <Card variant="elevated">
+            <Card.Header>
+              <h3 className="font-semibold text-calm-800 text-sm">Header Component</h3>
+            </Card.Header>
+            <Card.Body>
+              <p className="text-xs text-calm-700 mb-3">
+                Sticky header with back button, centered title (Lora serif), and actions slot.
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowHeader(!showHeader)}
+              >
+                {showHeader ? 'Hide' : 'Show'} Header
+              </Button>
+            </Card.Body>
+          </Card>
+
+          <Card variant="elevated">
+            <Card.Header>
+              <h3 className="font-semibold text-calm-800 text-sm">BottomTabBar</h3>
+            </Card.Header>
+            <Card.Body>
+              <p className="text-xs text-calm-700 mb-3">
+                Fixed to bottom with 4 tabs. Active tab: <strong className="text-peach-500">{activeTab}</strong>
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowTabBar(!showTabBar)}
+                >
+                  {showTabBar ? 'Hide' : 'Show'} Tab Bar
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </div>
+
         {/* Architecture Info */}
         <div className="mt-6 text-xs text-calm-600 space-y-1">
           <p className="font-semibold text-calm-800">Architecture:</p>
@@ -458,12 +544,24 @@ export function AppContent() {
           <p>✓ RitualContext: Ritual library, generation, editing</p>
           <p>✓ Custom Hooks: localStorage, reduced motion, notification, ritual ops</p>
           <p>✓ UI Components: Button, Card, Input, Slider, Toggle, Toast, Modal</p>
+          <p>✓ Layout Components: ScreenContainer, BottomTabBar, Header</p>
           <p>✓ Persistent storage via localStorage</p>
           <p>✓ Background task integration for generation</p>
           <p>✓ Type-safe context hooks (useApp, useRituals)</p>
           <p>✓ Available tones: {RITUAL_TONES.map((t) => t.label).join(', ')}</p>
         </div>
-      </div>
-    </div>
+        </div>
+      </ScreenContainer>
+
+      {/* Bottom tab bar */}
+      <BottomTabBar
+        activeTab={activeTab}
+        onTabClick={(tab) => {
+          setActiveTab(tab)
+          toast.showToast('info', `Navigating to ${tab}`)
+        }}
+        show={showTabBar}
+      />
+    </>
   )
 }
