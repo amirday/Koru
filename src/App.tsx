@@ -1,13 +1,13 @@
 import { AppProvider, RitualProvider } from '@/contexts'
 import { ToastProvider } from '@/components/ui'
-import { AppContent } from './AppContent'
+import { Router } from '@/router'
 
 function App() {
   return (
     <AppProvider>
       <RitualProvider>
         <ToastProvider>
-          <AppContent />
+          <Router />
         </ToastProvider>
       </RitualProvider>
     </AppProvider>
