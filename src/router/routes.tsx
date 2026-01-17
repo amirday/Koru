@@ -7,7 +7,7 @@ import { RequireOnboarding } from './RequireOnboarding'
 import { AppLayout } from './AppLayout'
 import { WelcomeScreen } from '@/screens/Onboarding/WelcomeScreen'
 import { InitialGoalSetupScreen } from '@/screens/Onboarding/InitialGoalSetupScreen'
-import { HomeScreen } from '@/screens/HomeScreen'
+import { HomeScreen } from '@/screens/Home/HomeScreen'
 import { PlaceholderScreen } from '@/screens/PlaceholderScreen'
 
 /**
