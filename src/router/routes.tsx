@@ -5,7 +5,8 @@
 import { Navigate, RouteObject } from 'react-router-dom'
 import { RequireOnboarding } from './RequireOnboarding'
 import { AppLayout } from './AppLayout'
-import { WelcomeScreen } from '@/screens/WelcomeScreen'
+import { WelcomeScreen } from '@/screens/Onboarding/WelcomeScreen'
+import { InitialGoalSetupScreen } from '@/screens/Onboarding/InitialGoalSetupScreen'
 import { HomeScreen } from '@/screens/HomeScreen'
 import { PlaceholderScreen } from '@/screens/PlaceholderScreen'
 
@@ -17,6 +18,10 @@ export const routes: RouteObject[] = [
   {
     path: '/welcome',
     element: <WelcomeScreen />,
+  },
+  {
+    path: '/setup',
+    element: <InitialGoalSetupScreen />,
   },
 
   // Main app routes (require onboarding)

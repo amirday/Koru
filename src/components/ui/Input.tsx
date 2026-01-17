@@ -4,7 +4,7 @@
  * Features: label, helper text, error states, auto-resize textarea
  */
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import type { InputSize } from '@/types'
 
 export interface InputProps
@@ -28,19 +28,28 @@ export interface InputProps
 /**
  * Input component with label, error, and helper text
  */
-export function Input({
-  type = 'text',
-  label,
-  helperText,
-  error,
-  inputSize = 'md',
-  autoResize = false,
-  maxRows = 10,
-  className = '',
-  disabled,
-  ...props
-}: InputProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+export const Input = forwardRef<HTMLTextAreaElement | HTMLInputElement, InputProps>(
+  function Input(
+    {
+      type = 'text',
+      label,
+      helperText,
+      error,
+      inputSize = 'md',
+      autoResize = false,
+      maxRows = 10,
+      className = '',
+      disabled,
+      ...props
+    },
+    ref
+  ) {
+    const internalRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null)
+
+    // Expose ref to parent
+    useImperativeHandle(ref, () => internalRef.current!)
+
+    const textareaRef = internalRef as React.RefObject<HTMLTextAreaElement>
 
   // Auto-resize textarea
   useEffect(() => {
@@ -73,8 +82,31 @@ export function Input({
 
   const combinedClassName = `${baseStyles} ${sizeStyles[inputSize]} ${stateStyles} ${className}`
 
-  // Render textarea
-  if (type === 'textarea') {
+    // Render textarea
+    if (type === 'textarea') {
+      return (
+        <div className="w-full">
+          {label && (
+            <label className="block text-sm font-medium text-calm-800 mb-1.5">
+              {label}
+              {props.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+          )}
+          <textarea
+            ref={textareaRef}
+            className={`${combinedClassName} resize-none`}
+            disabled={disabled}
+            {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+          />
+          {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
+          {!error && helperText && (
+            <p className="mt-1.5 text-sm text-calm-600">{helperText}</p>
+          )}
+        </div>
+      )
+    }
+
+    // Render input
     return (
       <div className="w-full">
         {label && (
@@ -83,11 +115,12 @@ export function Input({
             {props.required && <span className="text-red-500 ml-1">*</span>}
           </label>
         )}
-        <textarea
-          ref={textareaRef}
-          className={`${combinedClassName} resize-none`}
+        <input
+          ref={internalRef as React.RefObject<HTMLInputElement>}
+          type={type}
+          className={combinedClassName}
           disabled={disabled}
-          {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+          {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
         />
         {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
         {!error && helperText && (
@@ -96,26 +129,4 @@ export function Input({
       </div>
     )
   }
-
-  // Render input
-  return (
-    <div className="w-full">
-      {label && (
-        <label className="block text-sm font-medium text-calm-800 mb-1.5">
-          {label}
-          {props.required && <span className="text-red-500 ml-1">*</span>}
-        </label>
-      )}
-      <input
-        type={type}
-        className={combinedClassName}
-        disabled={disabled}
-        {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
-      />
-      {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
-      {!error && helperText && (
-        <p className="mt-1.5 text-sm text-calm-600">{helperText}</p>
-      )}
-    </div>
-  )
-}
+)
