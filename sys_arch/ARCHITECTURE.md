@@ -1,0 +1,1128 @@
+# Koru Meditation App - Architecture Documentation
+
+> **Version**: 1.0.0 (UI/UX Mock Phase)
+> **Last Updated**: January 2026
+> **Status**: Active Development
+
+---
+
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Technology Stack](#2-technology-stack)
+3. [Project Structure](#3-project-structure)
+4. [Data Architecture](#4-data-architecture)
+5. [Component Architecture](#5-component-architecture)
+6. [State Management](#6-state-management)
+7. [Service Layer](#7-service-layer)
+8. [Routing & Navigation](#8-routing--navigation)
+9. [Styling System](#9-styling-system)
+10. [Key User Flows](#10-key-user-flows)
+11. [Development Phases](#11-development-phases)
+12. [Future Architecture](#12-future-architecture)
+
+---
+
+## 1. Overview
+
+### 1.1 Product Vision
+
+Koru is a **goal-driven meditation ritual generator** that creates personalized meditation sessions, guides users with minimal UI, captures reflection, and transforms it into insights for better future rituals.
+
+### 1.2 Core Principles
+
+| Principle | Implementation |
+|-----------|----------------|
+| **Calm & Minimal** | Large whitespace, warm colors, reduced animations |
+| **Reduce Friction** | Smart defaults, quick starts, one-tap actions |
+| **Content > Controls** | Session screen hides all UI, sacred meditation space |
+| **Reflection → Personalization** | Post-session captures feed future recommendations |
+| **Smart Defaults + Override** | AI chooses, user can always change |
+
+### 1.3 Current Phase
+
+**UI/UX Mock Phase** - Building fully interactive screens with mocked data. No real backend, AI, or persistence beyond localStorage.
+
+---
+
+## 2. Technology Stack
+
+### 2.1 Core Framework
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    React 19.2.3                         │
+│              (Concurrent features, StrictMode)          │
+├─────────────────────────────────────────────────────────┤
+│                   TypeScript 5.9.3                      │
+│              (Strict mode, full type coverage)          │
+├─────────────────────────────────────────────────────────┤
+│                     Vite 7.3.1                          │
+│              (ESM build, instant HMR)                   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Dependencies
+
+| Category | Package | Version | Purpose |
+|----------|---------|---------|---------|
+| **Routing** | react-router | 7.12.0 | Client-side navigation |
+| **Styling** | tailwindcss | 4.1.18 | Utility-first CSS |
+| **Forms** | @tailwindcss/forms | 0.5.11 | Form component styles |
+| **Animation** | tailwindcss-animate | 1.0.7 | Animation utilities |
+| **PWA** | vite-plugin-pwa | 1.2.0 | Service worker, manifest |
+| **PWA Runtime** | workbox-window | 7.4.0 | Service worker management |
+| **Testing** | @playwright/test | 1.57.0 | E2E testing |
+
+### 2.3 Browser Support
+
+- Modern browsers (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
+- PWA installable on iOS 14+ and Android 8+
+- Offline support via service workers
+
+---
+
+## 3. Project Structure
+
+```
+koru/
+├── public/                          # Static assets
+│   ├── icons/                       # App icons (PWA)
+│   └── fonts/                       # Self-hosted fonts
+│
+├── src/
+│   ├── components/                  # React components
+│   │   ├── ui/                      # Design system primitives
+│   │   │   ├── Button.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Slider.tsx
+│   │   │   ├── Toggle.tsx
+│   │   │   ├── Toast.tsx
+│   │   │   ├── SearchInput.tsx
+│   │   │   └── index.ts             # Barrel exports
+│   │   │
+│   │   ├── layout/                  # Layout components
+│   │   │   ├── ScreenContainer.tsx
+│   │   │   ├── Header.tsx
+│   │   │   └── BottomTabBar.tsx
+│   │   │
+│   │   ├── cards/                   # Card components
+│   │   │   ├── GoalBox.tsx
+│   │   │   └── QuickStartCard.tsx
+│   │   │
+│   │   ├── generation/              # AI generation UI
+│   │   │   ├── GenerateButton.tsx
+│   │   │   ├── GenerationProgress.tsx
+│   │   │   └── ClarifyingQuestionModal.tsx
+│   │   │
+│   │   ├── rituals/                 # Ritual library UI
+│   │   │   ├── RitualCard.tsx
+│   │   │   ├── RitualPreviewModal.tsx
+│   │   │   └── SectionList.tsx
+│   │   │
+│   │   ├── editor/                  # Ritual editor
+│   │   │   ├── EditorTabs.tsx
+│   │   │   ├── StructureTab.tsx
+│   │   │   ├── PromptTab.tsx
+│   │   │   ├── VoicePacingTab.tsx
+│   │   │   ├── AdvancedTab.tsx
+│   │   │   └── SectionEditor.tsx
+│   │   │
+│   │   ├── session/                 # Session player
+│   │   │   ├── GuidanceText.tsx
+│   │   │   └── SessionControls.tsx
+│   │   │
+│   │   ├── reflection/              # Post-session
+│   │   │   ├── ReflectionCheckboxes.tsx
+│   │   │   └── MoodSlider.tsx
+│   │   │
+│   │   ├── dashboard/               # Analytics
+│   │   │   ├── StatsOverview.tsx
+│   │   │   ├── TrendsChart.tsx
+│   │   │   ├── CalendarHeatmap.tsx
+│   │   │   ├── InsightsFeed.tsx
+│   │   │   └── InsightTile.tsx
+│   │   │
+│   │   └── profile/                 # Settings
+│   │       ├── PreferencesSection.tsx
+│   │       └── ReminderSettings.tsx
+│   │
+│   ├── screens/                     # Feature screens
+│   │   ├── Onboarding/
+│   │   │   ├── WelcomeScreen.tsx
+│   │   │   └── InitialGoalSetupScreen.tsx
+│   │   ├── Home/
+│   │   │   └── HomeScreen.tsx
+│   │   ├── Rituals/
+│   │   │   ├── RitualLibraryScreen.tsx
+│   │   │   └── RitualEditorScreen.tsx
+│   │   ├── Session/
+│   │   │   ├── SessionScreen.tsx
+│   │   │   └── ReflectionScreen.tsx
+│   │   ├── Dashboard/
+│   │   │   ├── DashboardScreen.tsx
+│   │   │   └── SessionDetailScreen.tsx
+│   │   └── Profile/
+│   │       └── ProfileScreen.tsx
+│   │
+│   ├── contexts/                    # React contexts
+│   │   ├── AppContext.tsx           # Goal, preferences, onboarding
+│   │   └── RitualContext.tsx        # Rituals, generation, library
+│   │
+│   ├── hooks/                       # Custom hooks
+│   │   ├── useLocalStorage.ts
+│   │   ├── useReducedMotion.ts
+│   │   ├── useNotification.ts
+│   │   ├── useRitual.ts
+│   │   ├── useBackgroundTask.ts
+│   │   ├── useSessionPlayer.ts
+│   │   └── index.ts
+│   │
+│   ├── services/                    # Service layer
+│   │   ├── storage/
+│   │   │   └── LocalStorageAdapter.ts
+│   │   ├── ai/
+│   │   │   └── MockAIProvider.ts
+│   │   ├── background/
+│   │   │   └── BackgroundTaskService.ts
+│   │   └── notification/
+│   │       └── NotificationService.ts
+│   │
+│   ├── types/                       # TypeScript definitions
+│   │   ├── models.ts                # Domain models
+│   │   ├── services.ts              # Service interfaces
+│   │   └── ui.ts                    # UI types
+│   │
+│   ├── mocks/                       # Mock data
+│   │   ├── rituals.ts
+│   │   ├── quickStarts.ts
+│   │   ├── dashboardData.ts
+│   │   └── sessions.ts
+│   │
+│   ├── router/                      # Routing
+│   │   ├── index.tsx
+│   │   ├── routes.tsx
+│   │   ├── AppLayout.tsx
+│   │   └── RequireOnboarding.tsx
+│   │
+│   ├── styles/                      # Global styles
+│   │   └── globals.css
+│   │
+│   ├── App.tsx                      # Root component
+│   └── main.tsx                     # Entry point
+│
+├── plan_koru_ui_mvp/                # Implementation plans
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── tailwind.config.js
+└── index.html
+```
+
+---
+
+## 4. Data Architecture
+
+### 4.1 Type System Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Branded Types                         │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │  Timestamp = string & { __brand: 'Timestamp' }  │    │
+│  │  - Compile-time safety                          │    │
+│  │  - Runtime: ISO 8601 string                     │    │
+│  │  - JSON/localStorage compatible                 │    │
+│  └─────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Domain Models
+
+#### Goal
+
+```typescript
+interface Goal {
+  id: string
+  instructions: string      // What user wants to achieve
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+```
+
+#### Ritual (Content + Statistics Separated)
+
+```typescript
+// Immutable content (shareable)
+interface RitualContent {
+  id: string
+  title: string
+  instructions: string
+  duration: number          // seconds
+  tone: RitualTone
+  pace: RitualPace
+  includeSilence: boolean
+  soundscape: Soundscape
+  sections: RitualSection[]
+  tags: string[]
+  isTemplate: boolean
+  generatedFrom?: string    // AI prompt reference
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+// Mutable usage data (private)
+interface RitualStatistics {
+  id: string                // Own identity
+  ritualId: string          // Reference
+  isFavorite: boolean
+  usageCount: number
+  lastUsedAt?: Timestamp
+}
+
+// Combined for display
+interface Ritual extends RitualContent {
+  statistics: RitualStatistics | null
+}
+```
+
+#### Ritual Section
+
+```typescript
+type RitualSectionType = 'intro' | 'body' | 'silence' | 'transition' | 'closing'
+
+interface RitualSection {
+  id: string
+  type: RitualSectionType
+  durationSeconds: number
+  guidanceText?: string     // Empty for silence
+  silenceDuration?: number
+  soundscape?: Soundscape
+}
+```
+
+#### Session (Data + Reflection Separated)
+
+```typescript
+type SessionStatus = 'in_progress' | 'completed' | 'abandoned'
+
+// Session execution data
+interface SessionData {
+  id: string
+  ritualId: string
+  status: SessionStatus
+  startedAt: Timestamp
+  completedAt?: Timestamp
+  progressSeconds: number
+}
+
+// User reflection (private)
+interface SessionReflection {
+  id: string                // Own identity
+  sessionId: string         // Reference
+  reflection: string
+  rating: 1 | 2 | 3 | 4 | 5
+  createdAt: Timestamp
+}
+
+// Combined for display
+interface Session extends SessionData {
+  reflection: SessionReflection | null
+}
+```
+
+#### User Preferences
+
+```typescript
+interface UserPreferences {
+  defaultDuration: number     // seconds
+  defaultTone: RitualTone     // 'gentle' | 'neutral' | 'coach'
+  notifications: boolean
+  soundscapesEnabled: boolean
+  voice?: VoiceOption         // future: TTS voice
+  theme?: ThemeOption         // 'light' | 'dark' | 'auto'
+}
+```
+
+### 4.3 Enumerations
+
+```typescript
+type RitualTone = 'gentle' | 'neutral' | 'coach'
+type RitualPace = 'slow' | 'medium' | 'fast'
+type Soundscape = 'ocean' | 'forest' | 'rain' | 'fire' | 'none'
+type VoiceOption = 'default' | 'male' | 'female' | 'neutral'
+type ThemeOption = 'light' | 'dark' | 'auto'
+```
+
+### 4.4 Storage Schema
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `koru:goal` | Goal | Current user goal |
+| `koru:preferences` | UserPreferences | User settings |
+| `koru:onboarding_complete` | boolean | Onboarding status |
+| `koru:rituals` | Ritual[] | User's ritual library |
+| `koru:ritual:{id}` | RitualContent | Individual ritual |
+| `koru:ritual-stats:{id}` | RitualStatistics | Ritual usage stats |
+| `koru:session:{id}` | SessionData | Session record |
+| `koru:session-reflection:{id}` | SessionReflection | Reflection record |
+
+---
+
+## 5. Component Architecture
+
+### 5.1 Component Hierarchy
+
+```
+App
+├── ToastProvider
+│   └── RouterProvider
+│       ├── AppLayout (with nav)
+│       │   ├── Header
+│       │   ├── ScreenContainer
+│       │   │   └── [Screen Component]
+│       │   └── BottomTabBar
+│       │
+│       └── Fullscreen Routes (no nav)
+│           └── [SessionScreen | ReflectionScreen]
+```
+
+### 5.2 Design System Components
+
+#### Button
+
+```typescript
+interface ButtonProps {
+  variant: 'primary' | 'secondary' | 'ghost' | 'danger'
+  size: 'sm' | 'md' | 'lg'
+  isLoading?: boolean
+  disabled?: boolean
+  fullWidth?: boolean
+  leftIcon?: ReactNode
+  rightIcon?: ReactNode
+}
+```
+
+#### Card
+
+```typescript
+interface CardProps {
+  variant: 'default' | 'elevated' | 'flat'
+  padding?: 'none' | 'sm' | 'md' | 'lg'
+}
+
+// Compound components
+Card.Header  // Title + optional action
+Card.Body    // Content area
+```
+
+#### Input
+
+```typescript
+interface InputProps {
+  label?: string
+  helperText?: string
+  error?: string
+  multiline?: boolean
+  autoResize?: boolean
+}
+```
+
+#### Modal
+
+```typescript
+interface ModalProps {
+  isOpen: boolean
+  onClose: () => void
+  title?: string
+  size: 'sm' | 'md' | 'lg' | 'full'
+  closeOnBackdrop?: boolean
+  closeOnEscape?: boolean
+}
+```
+
+#### Toast
+
+```typescript
+interface ToastOptions {
+  type: 'success' | 'error' | 'info' | 'warning'
+  message: string
+  duration?: number  // ms, default 4000
+}
+
+// Usage via hook
+const { showToast } = useToast()
+showToast('success', 'Ritual saved!')
+```
+
+### 5.3 Component Design Patterns
+
+#### Variant Pattern
+All components use variant props for visual variations:
+
+```typescript
+<Button variant="primary" size="lg">Generate</Button>
+<Card variant="elevated">...</Card>
+```
+
+#### Compound Components
+Complex components use compound patterns:
+
+```typescript
+<Card>
+  <Card.Header>Title</Card.Header>
+  <Card.Body>Content</Card.Body>
+</Card>
+```
+
+#### Controlled Components
+Form components are fully controlled:
+
+```typescript
+<Input
+  value={value}
+  onChange={(e) => setValue(e.target.value)}
+/>
+```
+
+---
+
+## 6. State Management
+
+### 6.1 Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    React Context                         │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌─────────────────┐      ┌──────────────────┐          │
+│  │   AppContext    │      │  RitualContext   │          │
+│  ├─────────────────┤      ├──────────────────┤          │
+│  │ • goal          │      │ • rituals        │          │
+│  │ • preferences   │      │ • templates      │          │
+│  │ • onboarding    │      │ • isGenerating   │          │
+│  │ • bottomNav     │      │ • progress       │          │
+│  │ • isLoading     │      │ • clarifying Q   │          │
+│  └────────┬────────┘      └────────┬─────────┘          │
+│           │                        │                     │
+│           ▼                        ▼                     │
+│  ┌─────────────────────────────────────────────┐        │
+│  │            localStorage (persistence)        │        │
+│  └─────────────────────────────────────────────┘        │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 6.2 AppContext
+
+**Purpose**: Application-level state (goal, preferences, onboarding)
+
+```typescript
+interface AppState {
+  goal: Goal | null
+  preferences: UserPreferences
+  hasCompletedOnboarding: boolean
+  bottomNavVisible: boolean
+  isLoading: boolean
+}
+
+interface AppActions {
+  updateGoal(instructions: string): Promise<void>
+  updatePreferences(updates: Partial<UserPreferences>): Promise<void>
+  completeOnboarding(): Promise<void>
+  setBottomNavVisible(visible: boolean): void
+}
+```
+
+**Persistence**: Syncs to localStorage on every update.
+
+### 6.3 RitualContext
+
+**Purpose**: Ritual library and AI generation state
+
+```typescript
+interface RitualState {
+  rituals: Ritual[]
+  templates: Ritual[]
+  isGenerating: boolean
+  generationProgress: AIGenerationProgress | null
+  clarifyingQuestion: AIClarifyingQuestion | null
+  editingRitual: Ritual | null
+  generationTaskId: string | null
+  isLoading: boolean
+}
+
+interface RitualActions {
+  startGeneration(options: AIGenerationOptions): Promise<void>
+  answerClarifyingQuestion(answer: string): Promise<void>
+  saveRitual(ritual: Ritual): Promise<void>
+  deleteRitual(id: string): Promise<void>
+  duplicateRitual(id: string): Promise<Ritual>
+  setEditingRitual(ritual: Ritual | null): void
+  getRitual(id: string): Ritual | undefined
+  cancelGeneration(): Promise<void>
+}
+```
+
+**Persistence**: Rituals synced to localStorage. Generation state is transient.
+
+### 6.4 ToastContext
+
+**Purpose**: Notification queue management
+
+```typescript
+interface ToastState {
+  toasts: Toast[]  // Max 3 active
+}
+
+interface ToastActions {
+  showToast(type: ToastType, message: string, duration?: number): void
+  removeToast(id: string): void
+}
+```
+
+### 6.5 Custom Hooks
+
+| Hook | Purpose | Returns |
+|------|---------|---------|
+| `useApp()` | Access AppContext | `AppState & AppActions` |
+| `useRituals()` | Access RitualContext | `RitualState & RitualActions` |
+| `useToast()` | Access ToastContext | `{ showToast, removeToast }` |
+| `useLocalStorage(key, init)` | Synced localStorage | `[value, setValue]` |
+| `useReducedMotion()` | Motion preference | `boolean` |
+| `useNotification()` | Browser notifications | `{ isSupported, permission, notify }` |
+| `useSessionPlayer(ritual)` | Session playback | `{ state, play, pause, ... }` |
+
+---
+
+## 7. Service Layer
+
+### 7.1 Service Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Service Layer                         │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
+│  │   Storage    │  │      AI      │  │  Background  │   │
+│  │   Service    │  │   Service    │  │    Tasks     │   │
+│  ├──────────────┤  ├──────────────┤  ├──────────────┤   │
+│  │ Interface:   │  │ Interface:   │  │ Interface:   │   │
+│  │ StorageAdapter│ │ AIProvider   │  │ TaskManager  │   │
+│  │              │  │              │  │              │   │
+│  │ Current:     │  │ Current:     │  │ Current:     │   │
+│  │ localStorage │  │ MockProvider │  │ In-memory    │   │
+│  │              │  │              │  │              │   │
+│  │ Future:      │  │ Future:      │  │ Future:      │   │
+│  │ IndexedDB    │  │ Claude API   │  │ Web Workers  │   │
+│  │ Cloud Sync   │  │ OpenAI API   │  │              │   │
+│  └──────────────┘  └──────────────┘  └──────────────┘   │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │              Notification Service                 │   │
+│  │  • Browser Notification API                       │   │
+│  │  • Permission management                          │   │
+│  └──────────────────────────────────────────────────┘   │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 7.2 Storage Service
+
+**Interface**: `StorageAdapter`
+
+```typescript
+interface StorageAdapter {
+  get<T>(key: string): Promise<T | null>
+  set<T>(key: string, value: T): Promise<void>
+  remove(key: string): Promise<void>
+  clear(): Promise<void>
+  keys(prefix?: string): Promise<string[]>
+}
+```
+
+**Current Implementation**: `LocalStorageAdapter`
+- Namespace prefix: `koru:`
+- JSON serialization
+- Async API over sync localStorage
+
+**Future**: IndexedDB adapter, cloud sync adapter
+
+### 7.3 AI Service
+
+**Interface**: `AIProvider`
+
+```typescript
+interface AIProvider {
+  generateRitual(
+    options: AIGenerationOptions,
+    onProgress: (progress: AIGenerationProgress) => void
+  ): Promise<Ritual>
+
+  askClarifyingQuestion(
+    context: { instructions: string; tone?: RitualTone }
+  ): Promise<AIClarifyingQuestion | null>
+}
+
+interface AIGenerationOptions {
+  instructions: string
+  duration: number
+  tone: RitualTone
+  includeSilence: boolean
+  soundscape?: Soundscape
+}
+
+interface AIGenerationProgress {
+  stage: 'clarifying' | 'structuring' | 'writing' | 'complete'
+  percent: number
+  message: string
+}
+```
+
+**Current Implementation**: `MockAIProvider`
+- Simulates 4-stage generation with delays
+- 30% chance of clarifying questions
+- Returns pre-built ritual structure
+
+**Future**: Claude API, OpenAI API adapters
+
+### 7.4 Background Task Service
+
+**Interface**: `BackgroundTaskManager`
+
+```typescript
+interface BackgroundTaskManager {
+  run<T>(type: string, work: () => Promise<T>): Promise<string>
+  getTask(taskId: string): Promise<BackgroundTask | null>
+  cancel(taskId: string): Promise<void>
+}
+
+type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+
+interface BackgroundTask {
+  id: string
+  type: string
+  status: TaskStatus
+  result?: unknown
+  error?: Error
+}
+```
+
+**Purpose**: Enables navigation during long-running tasks (generation).
+
+### 7.5 Notification Service
+
+```typescript
+interface NotificationService {
+  isSupported(): boolean
+  getPermission(): NotificationPermission
+  requestPermission(): Promise<NotificationPermission>
+  notify(options: NotificationOptions): Promise<boolean>
+}
+
+interface NotificationOptions {
+  title: string
+  body?: string
+  icon?: string
+  badge?: string
+  tag?: string
+  requireInteraction?: boolean
+}
+```
+
+---
+
+## 8. Routing & Navigation
+
+### 8.1 Route Structure
+
+```
+/welcome                    → WelcomeScreen (onboarding)
+/setup                      → InitialGoalSetupScreen (onboarding)
+
+/ (AppLayout wrapper)
+├── /home                   → HomeScreen
+├── /rituals                → RitualLibraryScreen
+├── /rituals/new            → RitualEditorScreen (create)
+├── /rituals/:id/edit       → RitualEditorScreen (edit)
+├── /dashboard              → DashboardScreen
+├── /session-detail/:id     → SessionDetailScreen
+└── /profile                → ProfileScreen
+
+/session/:ritualId          → SessionScreen (fullscreen, no nav)
+/reflection/:sessionId      → ReflectionScreen (fullscreen, no nav)
+```
+
+### 8.2 Navigation Guards
+
+#### RequireOnboarding
+
+Wraps protected routes. Redirects to `/welcome` if onboarding incomplete.
+
+```typescript
+function RequireOnboarding({ children }) {
+  const { hasCompletedOnboarding } = useApp()
+
+  if (!hasCompletedOnboarding) {
+    return <Navigate to="/welcome" replace />
+  }
+
+  return children
+}
+```
+
+### 8.3 Layout Strategy
+
+| Route Pattern | Layout | Bottom Nav |
+|---------------|--------|------------|
+| `/welcome`, `/setup` | None | Hidden |
+| `/home`, `/rituals`, `/dashboard`, `/profile` | AppLayout | Visible |
+| `/session/*`, `/reflection/*` | Fullscreen | Hidden |
+
+### 8.4 Bottom Tab Bar
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                                                          │
+│   🏠 Home      📚 Rituals      📊 Dashboard      👤 Profile   │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 9. Styling System
+
+### 9.1 Design Tokens
+
+#### Colors
+
+```css
+/* Primary Accent */
+--color-peach-500: #FF9A54;
+
+/* Backgrounds */
+--color-warm-white: #FFFCF8;
+--color-gentle-yellow: #FFF9E6;
+--color-warm-cream: #FFF8F0;
+
+/* Neutrals */
+--color-calm-900: #252527;
+--color-calm-600: #6B6B6D;
+--color-calm-100: #F9F9F8;
+
+/* Functional */
+--color-success: #A3D9B1;
+--color-warning: #FFD8B0;
+--color-error: #FFB3BA;
+```
+
+#### Typography
+
+```css
+/* Font Families */
+--font-serif: 'Lora', Georgia, serif;
+--font-sans: 'Inter', system-ui, sans-serif;
+
+/* Font Sizes */
+--text-display: 2.5rem;   /* 40px - Welcome headlines */
+--text-h1: 2rem;          /* 32px - Screen titles */
+--text-h2: 1.5rem;        /* 24px - Section headers */
+--text-h3: 1.25rem;       /* 20px - Card titles */
+--text-body: 1rem;        /* 16px - Standard text */
+--text-small: 0.875rem;   /* 14px - Helper text */
+```
+
+#### Spacing
+
+```css
+/* Spacing Scale */
+--space-1: 0.25rem;   /* 4px */
+--space-2: 0.5rem;    /* 8px */
+--space-3: 0.75rem;   /* 12px */
+--space-4: 1rem;      /* 16px */
+--space-5: 1.25rem;   /* 20px */
+--space-6: 1.5rem;    /* 24px */
+--space-8: 2rem;      /* 32px */
+--space-10: 2.5rem;   /* 40px */
+--space-12: 3rem;     /* 48px */
+```
+
+### 9.2 Component Styling
+
+**Approach**: Tailwind CSS with custom design tokens
+
+```typescript
+// Button example
+<button className={cn(
+  // Base
+  'inline-flex items-center justify-center rounded-xl font-medium transition-colors',
+  // Variant
+  variant === 'primary' && 'bg-peach-500 text-white hover:bg-peach-600',
+  variant === 'secondary' && 'bg-warm-100 text-calm-900 hover:bg-warm-200',
+  // Size
+  size === 'sm' && 'px-3 py-1.5 text-sm',
+  size === 'md' && 'px-4 py-2 text-base',
+  size === 'lg' && 'px-6 py-3 text-lg',
+)}>
+```
+
+### 9.3 Accessibility
+
+| Feature | Implementation |
+|---------|----------------|
+| Focus states | 3px solid outline with offset |
+| Color contrast | WCAG AA (4.5:1 normal, 3:1 large) |
+| Reduced motion | `prefers-reduced-motion` media query |
+| Touch targets | 44px minimum |
+| Screen readers | ARIA labels on interactive elements |
+
+### 9.4 Responsive Design
+
+**Breakpoints**:
+- Mobile: 320px - 767px (primary target)
+- Tablet: 768px - 1023px
+- Desktop: 1024px+
+
+**Container**: Max-width 640px, centered
+
+---
+
+## 10. Key User Flows
+
+### 10.1 First-Time User (Onboarding)
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Welcome   │────▶│   Setup     │────▶│    Home     │
+│   Screen    │     │   Goal      │     │   Screen    │
+└─────────────┘     └─────────────┘     └─────────────┘
+     │                    │                    │
+     │ "Start"            │ "Create"           │ Onboarding
+     │                    │                    │ Complete
+     ▼                    ▼                    ▼
+  Goal prompt      Duration/Tone         Ritual library
+```
+
+### 10.2 Generate & Meditate
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│    Home     │────▶│  Generating │────▶│  Clarifying │
+│   Screen    │     │  Progress   │     │  Question   │
+└─────────────┘     └─────────────┘     └─────────────┘
+     │                    │                    │
+     │ "Generate"         │ 4-stage            │ Optional
+     │                    │ progress           │ prompt
+     ▼                    ▼                    ▼
+                   ┌─────────────┐     ┌─────────────┐
+                   │   Session   │────▶│ Reflection  │
+                   │   Player    │     │   Screen    │
+                   └─────────────┘     └─────────────┘
+                         │                    │
+                         │ Fullscreen         │ Post-session
+                         │ sacred mode        │ capture
+                         ▼                    ▼
+```
+
+### 10.3 Browse & Edit Rituals
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Rituals   │────▶│   Preview   │────▶│   Editor    │
+│   Library   │     │   Modal     │     │   Screen    │
+└─────────────┘     └─────────────┘     └─────────────┘
+     │                    │                    │
+     │ Search/Filter      │ Tap ritual         │ 4 tabs
+     │                    │                    │
+     ▼                    ▼                    ▼
+  Card actions      Start/Edit/Save      Structure, Prompt,
+  (Start, Edit,                          Voice, Advanced
+   Duplicate,
+   Delete)
+```
+
+### 10.4 View Progress
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Dashboard  │────▶│   Session   │────▶│   Repeat    │
+│   Screen    │     │   Detail    │     │   Ritual    │
+└─────────────┘     └─────────────┘     └─────────────┘
+     │                    │                    │
+     │ Stats, Trends      │ Tap calendar       │ "Repeat"
+     │ Calendar, Insights │ day                │ action
+     ▼                    ▼                    ▼
+```
+
+---
+
+## 11. Development Phases
+
+### 11.1 Phase Overview
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                    Development Phases                       │
+├────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Phase 1: UI/UX Mock ◀─── CURRENT                          │
+│  ├── Steps 1-15: Foundation (✅ Complete)                   │
+│  └── Steps 16-25: Full Screens (🔄 In Progress)            │
+│                                                             │
+│  Phase 2: Backend Integration (📋 Planned)                  │
+│  ├── Real database (Supabase/Firebase)                     │
+│  ├── User authentication                                   │
+│  └── Real AI integration (Claude API)                      │
+│                                                             │
+│  Phase 3: Audio & TTS (📋 Planned)                         │
+│  ├── Text-to-speech integration                            │
+│  ├── Soundscape audio files                                │
+│  └── Audio playback with Howler.js                         │
+│                                                             │
+│  Phase 4: Production (📋 Planned)                          │
+│  ├── Analytics & monitoring                                │
+│  ├── Error tracking                                        │
+│  └── Performance optimization                              │
+│                                                             │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 11.2 Phase 1 Completion Status
+
+| Step | Name | Status |
+|------|------|--------|
+| 1 | Project Setup | ✅ Done |
+| 2 | Core Data Models | ✅ Done |
+| 3 | Service Layer | ✅ Done |
+| 4 | Mock Data | ✅ Done |
+| 5 | Context Providers | ✅ Done |
+| 6 | Custom Hooks | ✅ Done |
+| 7 | Base UI Components | ✅ Done |
+| 8 | Layout Components | ✅ Done |
+| 9 | Routing Setup | ✅ Done |
+| 10 | Onboarding Screens | ✅ Done |
+| 11 | Home Screen Components | ✅ Done |
+| 12 | Home Screen Assembly | ✅ Done |
+| 13 | Generation Flow | ⚠️ Verification |
+| 14 | PWA Configuration | ⚠️ Partial |
+| 15 | Polish & Accessibility | ⚠️ Partial |
+| 16 | Ritual Library | 🔄 Planned |
+| 17 | Ritual Preview | 🔄 Planned |
+| 18 | Ritual Editor | 🔄 Planned |
+| 19 | Session Screen | 🔄 Planned |
+| 20 | Reflection Screen | 🔄 Planned |
+| 21 | Dashboard | 🔄 Planned |
+| 22 | Session Detail | 🔄 Planned |
+| 23 | Profile/Settings | 🔄 Planned |
+| 24 | Route Updates | 🔄 Planned |
+| 25 | Final Polish | 🔄 Planned |
+
+---
+
+## 12. Future Architecture
+
+### 12.1 Backend Integration
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Future Backend                        │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌──────────────┐     ┌──────────────┐                  │
+│  │   Supabase   │     │   Claude AI  │                  │
+│  │   or Firebase│     │      API     │                  │
+│  ├──────────────┤     ├──────────────┤                  │
+│  │ • Auth       │     │ • Generation │                  │
+│  │ • Database   │     │ • Clarifying │                  │
+│  │ • Realtime   │     │ • Insights   │                  │
+│  │ • Storage    │     │              │                  │
+│  └──────────────┘     └──────────────┘                  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │                  TTS Service                      │   │
+│  │  • ElevenLabs / OpenAI TTS                       │   │
+│  │  • Audio file generation & caching               │   │
+│  └──────────────────────────────────────────────────┘   │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 12.2 Migration Path
+
+**Storage**:
+```
+localStorage → IndexedDB → Supabase/Firebase
+```
+
+**AI**:
+```
+MockAIProvider → ClaudeAIProvider → Production API
+```
+
+**Authentication**:
+```
+None → Supabase Auth / Firebase Auth
+```
+
+### 12.3 Scalability Considerations
+
+| Area | Current | Future |
+|------|---------|--------|
+| **Data** | localStorage (~5MB) | Cloud database (unlimited) |
+| **Generation** | Mock (instant) | Queue system (rate limiting) |
+| **Audio** | Mock (no files) | CDN-hosted soundscapes |
+| **Sync** | Single device | Multi-device sync |
+| **Offline** | Full offline | Offline-first with sync |
+
+---
+
+## Appendix A: File Naming Conventions
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Component | PascalCase | `GoalBox.tsx` |
+| Hook | camelCase with `use` prefix | `useLocalStorage.ts` |
+| Service | PascalCase | `LocalStorageAdapter.ts` |
+| Type file | camelCase | `models.ts` |
+| Mock data | camelCase | `rituals.ts` |
+| Screen | PascalCase with `Screen` suffix | `HomeScreen.tsx` |
+
+## Appendix B: Import Aliases
+
+```typescript
+// tsconfig.json paths
+{
+  "@/*": ["./src/*"],
+  "@/components/*": ["./src/components/*"],
+  "@/screens/*": ["./src/screens/*"],
+  "@/hooks/*": ["./src/hooks/*"],
+  "@/services/*": ["./src/services/*"],
+  "@/types/*": ["./src/types/*"],
+  "@/mocks/*": ["./src/mocks/*"],
+  "@/contexts/*": ["./src/contexts/*"]
+}
+```
+
+## Appendix C: Scripts
+
+```bash
+# Development
+pnpm dev              # Start dev server (port 5173)
+
+# Build
+pnpm build            # TypeScript check + Vite build
+pnpm preview          # Preview production build
+
+# Quality
+pnpm type-check       # TypeScript validation
+pnpm test             # Playwright E2E tests (when configured)
+```
+
+---
+
+*This document is maintained as part of the Koru project. For implementation details, see the plan files in `/plan_koru_ui_mvp/`.*
