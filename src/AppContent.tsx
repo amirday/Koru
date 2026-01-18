@@ -402,7 +402,7 @@ export function AppContent() {
                 min={0}
                 max={100}
                 value={sliderValue}
-                onChange={(e) => setSliderValue(Number(e.target.value))}
+                onChange={(value) => setSliderValue(value)}
                 showValue
                 formatValue={(val) => `${val}%`}
               />
@@ -420,14 +420,14 @@ export function AppContent() {
                   variant="checkbox"
                   label="Checkbox Toggle"
                   checked={checkboxChecked}
-                  onChange={(e) => setCheckboxChecked(e.target.checked)}
+                  onChange={(checked) => setCheckboxChecked(checked)}
                   helperText="This is a checkbox with helper text"
                 />
                 <Toggle
                   variant="switch"
                   label="Switch Toggle"
                   checked={switchChecked}
-                  onChange={(e) => setSwitchChecked(e.target.checked)}
+                  onChange={(checked) => setSwitchChecked(checked)}
                 />
               </div>
             </Card.Body>

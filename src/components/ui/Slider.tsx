@@ -5,7 +5,7 @@
 
 import React from 'react'
 
-export interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+export interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
   /** Slider label */
   label?: string
   /** Show current value */
@@ -14,6 +14,8 @@ export interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
   formatValue?: (value: number) => string
   /** Helper text below slider */
   helperText?: string
+  /** Simple onChange handler that receives number value */
+  onChange?: (value: number) => void
 }
 
 /**
@@ -29,6 +31,7 @@ export function Slider({
   step = 1,
   value = 50,
   className = '',
+  onChange,
   ...props
 }: SliderProps) {
   const currentValue = Number(value)
@@ -66,6 +69,7 @@ export function Slider({
           max={max}
           step={step}
           value={value}
+          onChange={(e) => onChange?.(Number(e.target.value))}
           className="relative w-full h-2 bg-transparent appearance-none cursor-pointer
             [&::-webkit-slider-thumb]:appearance-none
             [&::-webkit-slider-thumb]:w-5

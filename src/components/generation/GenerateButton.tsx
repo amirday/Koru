@@ -131,7 +131,7 @@ export function GenerateButton({
               label="Include silence moments"
               labelPosition="left"
               checked={includeSilence}
-              onChange={(e) => setIncludeSilence(e.target.checked)}
+              onChange={(checked) => setIncludeSilence(checked)}
               disabled={isGenerating}
               className="flex items-center justify-between"
             />

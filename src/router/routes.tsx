@@ -8,7 +8,10 @@ import { AppLayout } from './AppLayout'
 import { WelcomeScreen } from '@/screens/Onboarding/WelcomeScreen'
 import { InitialGoalSetupScreen } from '@/screens/Onboarding/InitialGoalSetupScreen'
 import { HomeScreen } from '@/screens/Home/HomeScreen'
-import { PlaceholderScreen } from '@/screens/PlaceholderScreen'
+import { RitualLibraryScreen, RitualEditorScreen } from '@/screens/Rituals'
+import { SessionScreen, ReflectionScreen } from '@/screens/Session'
+import { DashboardScreen, SessionDetailScreen } from '@/screens/Dashboard'
+import { ProfileScreen } from '@/screens/Profile'
 
 /**
  * App route configuration
@@ -22,6 +25,24 @@ export const routes: RouteObject[] = [
   {
     path: '/setup',
     element: <InitialGoalSetupScreen />,
+  },
+
+  // Fullscreen routes (require onboarding, no nav)
+  {
+    path: '/session/:id',
+    element: (
+      <RequireOnboarding>
+        <SessionScreen />
+      </RequireOnboarding>
+    ),
+  },
+  {
+    path: '/reflection/:sessionId',
+    element: (
+      <RequireOnboarding>
+        <ReflectionScreen />
+      </RequireOnboarding>
+    ),
   },
 
   // Main app routes (require onboarding)
@@ -42,33 +63,27 @@ export const routes: RouteObject[] = [
       },
       {
         path: '/rituals',
-        element: (
-          <PlaceholderScreen
-            title="Rituals"
-            phase="2"
-            description="Browse and manage your meditation ritual library"
-          />
-        ),
+        element: <RitualLibraryScreen />,
+      },
+      {
+        path: '/rituals/new',
+        element: <RitualEditorScreen />,
+      },
+      {
+        path: '/rituals/:id/edit',
+        element: <RitualEditorScreen />,
       },
       {
         path: '/dashboard',
-        element: (
-          <PlaceholderScreen
-            title="Dashboard"
-            phase="2"
-            description="Track your meditation practice and insights"
-          />
-        ),
+        element: <DashboardScreen />,
+      },
+      {
+        path: '/session-detail/:sessionId',
+        element: <SessionDetailScreen />,
       },
       {
         path: '/profile',
-        element: (
-          <PlaceholderScreen
-            title="Profile"
-            phase="2"
-            description="Manage your preferences and settings"
-          />
-        ),
+        element: <ProfileScreen />,
       },
     ],
   },

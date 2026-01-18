@@ -5,3 +5,10 @@
 
 export { mockRituals } from './rituals'
 export { quickStarts, getQuickStart, getQuickStartsByTag } from './quickStarts'
+export {
+  mockSessions,
+  mockStats,
+  mockInsights,
+  mockWeeklyData,
+  mockCalendarData,
+} from './dashboardData'

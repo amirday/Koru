@@ -21,3 +21,6 @@ export type { ToggleProps } from './Toggle'
 export { ToastProvider, useToast } from './Toast'
 
 export { Modal } from './Modal'
+
+export { SearchInput } from './SearchInput'
+export type { SearchInputProps } from './SearchInput'

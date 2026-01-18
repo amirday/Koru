@@ -6,7 +6,7 @@
 
 import React from 'react'
 
-export interface ToggleProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+export interface ToggleProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
   /** Toggle variant */
   variant?: 'checkbox' | 'switch'
   /** Label text */
@@ -17,6 +17,8 @@ export interface ToggleProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
   helperText?: string
   /** Indeterminate state (checkbox only) */
   indeterminate?: boolean
+  /** Simple onChange handler that receives boolean value */
+  onChange?: (checked: boolean) => void
 }
 
 /**
@@ -31,6 +33,7 @@ export function Toggle({
   checked,
   className = '',
   disabled,
+  onChange,
   ...props
 }: ToggleProps) {
   const inputRef = React.useRef<HTMLInputElement>(null)
@@ -85,6 +88,7 @@ export function Toggle({
             type="checkbox"
             checked={checked}
             disabled={disabled}
+            onChange={(e) => onChange?.(e.target.checked)}
             className="sr-only peer"
             {...props}
           />
