@@ -174,13 +174,45 @@ A goal-driven ritual generator that creates personalized meditation sessions, gu
 - Goal Box (editable, autosave)
 - Quick Start Card (carousel)
 - Primary CTA (Generate)
-- Ritual Card (title, instructions, duration)
+- Ritual Card (title, instructions, duration, badges)
 - Section Editor (accordion)
 - Session Player (pause / restart only)
 - Reflection Check-ins (checkboxes + slider)
 - Insight Tile
 - Calendar Heatmap
 - Toast / Gentle feedback messages
+- Status Badges (New, Favorite, Tone indicators)
+
+### 4.1 Status Badges
+
+Small, pill-shaped indicators that convey ritual metadata at a glance.
+
+**"New" Badge**
+- Shown on rituals created within the last 24 hours
+- Style: Soft peach background (`bg-peach-100`), peach text (`text-peach-700`), subtle border (`border-peach-200`)
+- Includes small star icon for visual interest
+- Disappears automatically after 24 hours (no user action needed)
+- Purpose: Help users quickly identify recently created rituals in their library
+
+**Tone Badges**
+- Gentle: Soft green (`bg-green-100 text-green-700`)
+- Neutral: Calm gray (`bg-calm-100 text-calm-700`)
+- Coach: Soft peach (`bg-peach-100 text-peach-700`)
+
+**Duration Badge**
+- Warm neutral (`bg-warm-100 text-calm-700`)
+- Shows duration in minutes (e.g., "10 min")
+
+**Favorite Indicator**
+- Peach heart icon (`text-peach-500`)
+- Shown when `statistics.isFavorite` is true
+
+**Badge Design Principles**
+- Keep badges small and unobtrusive (text-xs, py-0.5, px-2)
+- Use rounded-full for pill shape
+- Warm, muted colors that don't compete for attention
+- Icons should be small (w-3 h-3 or w-4 h-4)
+- Group badges in a horizontal row with consistent gap-2 spacing
 
 ---
 
@@ -292,9 +324,13 @@ Suggested quick starts:
 - Search bar
 - Filters: Duration, Goal tag, Last used
 - Sections:
-  - Saved rituals
+  - Saved rituals (sorted by creation date, newest first)
   - Recent
   - Templates
+- Ritual card displays:
+  - Title and instructions
+  - Status badges: "New" (if < 24h old), duration, tone, favorite
+  - Last used timestamp
 - Ritual card actions:
   - Start
   - Edit

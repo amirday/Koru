@@ -30,6 +30,8 @@ interface RitualContextState {
   generationTaskId: string | null
   /** Loading state */
   isLoading: boolean
+  /** ID of newly generated ritual (for navigation) */
+  generatedRitualId: string | null
 }
 
 interface RitualContextActions {
@@ -49,6 +51,8 @@ interface RitualContextActions {
   getRitual: (id: string) => Ritual | undefined
   /** Cancel ongoing generation */
   cancelGeneration: () => Promise<void>
+  /** Clear generated ritual ID (after navigation) */
+  clearGeneratedRitualId: () => void
 }
 
 type RitualContextValue = RitualContextState & RitualContextActions
@@ -72,6 +76,7 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
   const [editingRitual, setEditingRitual] = useState<Ritual | null>(null)
   const [generationTaskId, setGenerationTaskId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [generatedRitualId, setGeneratedRitualId] = useState<string | null>(null)
 
   // Load initial state from storage
   useEffect(() => {
@@ -122,6 +127,7 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
       setIsGenerating(true)
       setGenerationProgress(null)
       setClarifyingQuestion(null)
+      setGeneratedRitualId(null)
 
       // Check if AI wants to ask clarifying question first
       const question = await aiService.askClarifyingQuestion({
@@ -135,61 +141,40 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      // Start generation in background
-      const taskId = await backgroundTaskService.run('ritual-generation', async () => {
-        const ritual = await aiService.generateRitual(options, (progress) => {
-          setGenerationProgress(progress)
-        })
-        return ritual
+      // Generate ritual directly (not in background task to capture result)
+      const ritual = await aiService.generateRitual(options, (progress) => {
+        setGenerationProgress(progress)
       })
 
-      setGenerationTaskId(taskId)
+      // Save the generated ritual to the library
+      const now = Timestamp.now()
+      const savedRitual: Ritual = {
+        ...ritual,
+        createdAt: ritual.createdAt || now,
+        updatedAt: now,
+      }
 
-      // Poll for completion
-      pollGenerationTask(taskId)
+      // Add to rituals list using functional update (avoids stale closure)
+      setRituals(prevRituals => {
+        const updatedRituals = [...prevRituals, savedRitual]
+        // Persist to storage
+        storageService.set(STORAGE_KEYS.RITUALS, updatedRituals).catch(err => {
+          console.error('[RitualContext] Failed to persist:', err)
+        })
+        return updatedRituals
+      })
+
+      // Set the generated ritual ID for navigation
+      setGeneratedRitualId(savedRitual.id)
+      setIsGenerating(false)
+
+      console.log('[RitualContext] Ritual generated and saved:', savedRitual.id, savedRitual.title)
     } catch (error) {
       console.error('[RitualContext] Generation failed:', error)
       setIsGenerating(false)
       setGenerationProgress(null)
       throw error
     }
-  }, [])
-
-  /**
-   * Poll background task for completion
-   */
-  const pollGenerationTask = useCallback(async (taskId: string) => {
-    const checkTask = async () => {
-      const task = await backgroundTaskService.getTask(taskId)
-
-      if (!task) {
-        setIsGenerating(false)
-        return
-      }
-
-      if (task.status === 'completed') {
-        // Generation complete - task.result should have the ritual
-        // For now, just generate a new one since we can't access result
-        // In real implementation, we'd get the ritual from task result
-        setIsGenerating(false)
-        setGenerationProgress({
-          stage: 'complete',
-          progress: 100,
-          message: 'Your ritual is ready!',
-        })
-        setGenerationTaskId(null)
-      } else if (task.status === 'failed') {
-        console.error('[RitualContext] Generation task failed:', task.error)
-        setIsGenerating(false)
-        setGenerationProgress(null)
-        setGenerationTaskId(null)
-      } else {
-        // Still running, check again
-        setTimeout(checkTask, 500)
-      }
-    }
-
-    checkTask()
   }, [])
 
   /**
@@ -305,7 +290,15 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
     setIsGenerating(false)
     setGenerationProgress(null)
     setClarifyingQuestion(null)
+    setGeneratedRitualId(null)
   }, [generationTaskId])
+
+  /**
+   * Clear generated ritual ID (after navigation)
+   */
+  const clearGeneratedRitualId = useCallback(() => {
+    setGeneratedRitualId(null)
+  }, [])
 
   const value: RitualContextValue = {
     // State
@@ -317,6 +310,7 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
     editingRitual,
     generationTaskId,
     isLoading,
+    generatedRitualId,
 
     // Actions
     startGeneration,
@@ -327,6 +321,7 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
     setEditingRitual,
     getRitual,
     cancelGeneration,
+    clearGeneratedRitualId,
   }
 
   return <RitualContext.Provider value={value}>{children}</RitualContext.Provider>

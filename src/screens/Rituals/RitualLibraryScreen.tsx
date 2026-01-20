@@ -36,7 +36,8 @@ export function RitualLibraryScreen() {
     // Select base list based on tab
     switch (activeTab) {
       case 'all':
-        results = [...rituals]
+        // Sort by createdAt descending (newest first)
+        results = [...rituals].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         break
       case 'saved':
         results = rituals.filter((r) => r.statistics?.isFavorite)

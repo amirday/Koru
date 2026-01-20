@@ -48,6 +48,19 @@ function formatLastUsed(timestamp?: string): string {
 }
 
 /**
+ * Check if ritual was created recently (within last 24 hours)
+ */
+function isNewRitual(createdAt?: string): boolean {
+  if (!createdAt) return false
+
+  const created = new Date(createdAt)
+  const now = new Date()
+  const diffHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60)
+
+  return diffHours < 24
+}
+
+/**
  * Get tone badge color
  */
 function getToneBadgeColor(tone: RitualTone): string {
@@ -196,6 +209,16 @@ export function RitualCard({
 
           {/* Badges row */}
           <div className="flex items-center gap-2 mb-3">
+            {/* New badge - shown for rituals created in last 24 hours */}
+            {isNewRitual(ritual.createdAt) && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-peach-100 text-peach-700 border border-peach-200">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z" />
+                </svg>
+                New
+              </span>
+            )}
+
             {/* Duration badge */}
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warm-100 text-calm-700">
               {formatDuration(ritual.duration)}

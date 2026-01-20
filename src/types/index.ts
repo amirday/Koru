@@ -78,3 +78,18 @@ export {
   FEATURES,
   MOCK_DELAYS,
 } from './constants'
+
+// OpenAI types (for external use if needed)
+export type {
+  OpenAIChatMessage,
+  OpenAIChatCompletionRequest,
+  OpenAIChatCompletionResponse,
+  OpenAIRitualSectionResponse,
+  OpenAIRitualResponse,
+  OpenAIErrorResponse,
+  OpenAIErrorType,
+  OpenAIServiceError,
+  OpenAIConfig,
+} from './openai'
+
+export { OPENAI_DEFAULTS } from './openai'

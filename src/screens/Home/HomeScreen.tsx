@@ -3,7 +3,8 @@
  * Features: Goal editing, quick starts, generation interface
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp, useRituals } from '@/contexts'
 import { ScreenContainer, Header } from '@/components/layout'
 import { useToast } from '@/components/ui'
@@ -18,6 +19,7 @@ import { quickStarts } from '@/mocks/quickStarts'
  * Home screen with goal management and ritual generation
  */
 export function HomeScreen() {
+  const navigate = useNavigate()
   const { goal, updateGoal, preferences } = useApp()
   const {
     isGenerating,
@@ -26,10 +28,20 @@ export function HomeScreen() {
     startGeneration,
     answerClarifyingQuestion,
     cancelGeneration,
+    generatedRitualId,
+    clearGeneratedRitualId,
   } = useRituals()
   const toast = useToast()
 
   const [showProgress, setShowProgress] = useState(true)
+
+  // Navigate to edit screen when a ritual is generated
+  useEffect(() => {
+    if (generatedRitualId) {
+      clearGeneratedRitualId()
+      navigate(`/rituals/${generatedRitualId}/edit`)
+    }
+  }, [generatedRitualId, clearGeneratedRitualId, navigate])
 
   // Get time-based greeting
   const getGreeting = () => {
