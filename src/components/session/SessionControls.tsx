@@ -15,6 +15,8 @@ export interface SessionControlsProps {
   onPause: () => void
   /** Restart callback (shows confirm) */
   onRestart: () => void
+  /** Skip to next section callback */
+  onSkipNext: () => void
   /** Auto-hide controls */
   autoHide?: boolean
   /** Auto-hide delay in ms */
@@ -29,6 +31,7 @@ export function SessionControls({
   onPlay,
   onPause,
   onRestart,
+  onSkipNext,
   autoHide = true,
   autoHideDelay = 3000,
 }: SessionControlsProps) {
@@ -119,8 +122,16 @@ export function SessionControls({
             )}
           </button>
 
-          {/* Spacer for symmetry */}
-          <div className="w-12 h-12" />
+          {/* Skip to next section button */}
+          <button
+            onClick={onSkipNext}
+            className="w-12 h-12 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-calm-800 hover:bg-white/30 transition-colors"
+            aria-label="Skip to next section"
+          >
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+            </svg>
+          </button>
         </div>
 
         {/* Paused indicator */}

@@ -37,3 +37,11 @@ export {
   estimateSpeechDuration,
   formatDuration,
 } from './audio'
+
+// Ritual Audio
+export { RitualAudioGenerator, ritualAudioGenerator } from './ritual-audio'
+export type {
+  GenerationProgress,
+  SectionAudio,
+  RitualAudioResult,
+} from './ritual-audio'

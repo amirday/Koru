@@ -1,6 +1,6 @@
 /**
  * SessionScreen - Sacred fullscreen meditation player
- * Features: Minimal UI, auto-hide controls, text size cycling, gesture support
+ * Features: Audio generation, minimal UI, auto-hide controls, text size cycling, gesture support
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -10,8 +10,131 @@ import { useSessionPlayer } from '@/hooks/useSessionPlayer'
 import { useReducedMotion } from '@/hooks'
 import { GuidanceText, SessionControls } from '@/components/session'
 import { getSectionGuidanceText } from '@/types'
+import { getTTSService } from '@/services'
 
 type TextSize = 'medium' | 'large' | 'extra-large'
+
+/**
+ * Audio Preparation Screen - Shows while generating audio
+ */
+function AudioPreparation({
+  progress,
+  message,
+  error,
+  onRetry,
+  onSkip,
+  onCancel,
+}: {
+  progress: number
+  message: string
+  error: string | null
+  onRetry: () => void
+  onSkip: () => void
+  onCancel: () => void
+}) {
+  const prefersReducedMotion = useReducedMotion()
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-warm-50 flex items-center justify-center p-8">
+        <div className="text-center max-w-sm">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-serif font-bold text-calm-900 mb-2">
+            Audio generation failed
+          </h2>
+          <p className="text-calm-600 mb-6">{error}</p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={onRetry}
+              className="w-full px-6 py-3 bg-peach-500 text-white rounded-lg font-medium hover:bg-peach-600 transition-colors"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={onSkip}
+              className="w-full px-6 py-3 bg-calm-100 text-calm-700 rounded-lg font-medium hover:bg-calm-200 transition-colors"
+            >
+              Continue without audio
+            </button>
+            <button
+              onClick={onCancel}
+              className="w-full px-6 py-2 text-calm-500 hover:text-calm-700 transition-colors"
+            >
+              Cancel session
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 bg-warm-50 flex items-center justify-center p-8">
+      <div className="text-center max-w-sm">
+        {/* Animated breath circle */}
+        <div className="relative w-32 h-32 mx-auto mb-8">
+          <div
+            className={`absolute inset-0 rounded-full bg-gradient-to-br from-peach-200 to-calm-200 ${
+              prefersReducedMotion ? '' : 'animate-pulse'
+            }`}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-2xl font-bold text-calm-700">{progress}%</span>
+          </div>
+          {/* Progress ring */}
+          <svg className="absolute inset-0 w-full h-full -rotate-90">
+            <circle
+              cx="64"
+              cy="64"
+              r="56"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4"
+              className="text-calm-200"
+            />
+            <circle
+              cx="64"
+              cy="64"
+              r="56"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4"
+              strokeDasharray={2 * Math.PI * 56}
+              strokeDashoffset={2 * Math.PI * 56 * (1 - progress / 100)}
+              strokeLinecap="round"
+              className={`text-peach-500 ${
+                prefersReducedMotion ? '' : 'transition-all duration-300'
+              }`}
+            />
+          </svg>
+        </div>
+
+        <h2 className="text-xl font-serif font-bold text-calm-900 mb-2">
+          Preparing your session
+        </h2>
+        <p className="text-calm-600 mb-2">{message || 'Generating audio...'}</p>
+        <p className="text-sm text-calm-500 mb-8">
+          Take a moment to settle in...
+        </p>
+
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onSkip}
+            className="px-6 py-2 text-calm-500 hover:text-calm-700 transition-colors text-sm"
+          >
+            Skip audio and use text only
+          </button>
+          <button
+            onClick={onCancel}
+            className="px-6 py-2 text-calm-400 hover:text-calm-600 transition-colors text-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /**
  * SessionScreen - Sacred fullscreen meditation experience
@@ -31,27 +154,58 @@ export function SessionScreen() {
     currentSection,
     showGuidance,
     elapsedTime,
+    generationProgress,
+    generationMessage,
+    errorMessage,
+    hasAudio,
     play,
     pause,
     restart,
     end,
+    skipToNextSection,
+    generateAudio,
+    cancelGeneration,
+    skipToTextMode,
   } = useSessionPlayer(ritual ?? null)
 
   // Local state
-  const [textSize, setTextSize] = useState<TextSize>('large')
+  const textSize: TextSize = 'large'
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [sessionId] = useState(`session-${Date.now()}`)
+  const [preparationStarted, setPreparationStarted] = useState(false)
 
   // Long press detection
   const longPressRef = useRef<number | null>(null)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
-  // Start session on mount
+  // Check if TTS is available
+  const ttsService = getTTSService()
+  const isRealTTS = ttsService.isRealTTS()
+
+  // Start audio generation on mount (if real TTS is available)
   useEffect(() => {
-    if (ritual && state === 'idle') {
-      play()
+    if (ritual && state === 'idle' && !preparationStarted) {
+      setPreparationStarted(true)
+      if (isRealTTS) {
+        // Generate audio first
+        generateAudio()
+      } else {
+        // No real TTS, go straight to text mode
+        skipToTextMode()
+      }
     }
-  }, [ritual, state, play])
+  }, [ritual, state, preparationStarted, isRealTTS, generateAudio, skipToTextMode])
+
+  // Start playback when audio is ready
+  useEffect(() => {
+    if (state === 'ready') {
+      // Small delay before starting
+      const timer = setTimeout(() => {
+        play()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [state, play])
 
   // Handle session completion
   useEffect(() => {
@@ -62,22 +216,6 @@ export function SessionScreen() {
       }, 1000)
     }
   }, [state, navigate, sessionId, id])
-
-  // Handle text size cycling
-  const cycleTextSize = useCallback(() => {
-    setTextSize((prev) => {
-      switch (prev) {
-        case 'medium':
-          return 'large'
-        case 'large':
-          return 'extra-large'
-        case 'extra-large':
-          return 'medium'
-        default:
-          return 'large'
-      }
-    })
-  }, [])
 
   // Handle long press start
   const handleTouchStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
@@ -123,6 +261,7 @@ export function SessionScreen() {
 
   // Handle exit confirmation
   const handleExitConfirm = () => {
+    cancelGeneration()
     end()
     navigate('/home')
   }
@@ -163,6 +302,20 @@ export function SessionScreen() {
     )
   }
 
+  // Show preparation screen during audio generation
+  if (state === 'generating' || state === 'error') {
+    return (
+      <AudioPreparation
+        progress={generationProgress}
+        message={generationMessage}
+        error={state === 'error' ? errorMessage : null}
+        onRetry={generateAudio}
+        onSkip={skipToTextMode}
+        onCancel={handleExitConfirm}
+      />
+    )
+  }
+
   // Get current guidance text
   const guidanceText = currentSection?.type === 'silence'
     ? ''
@@ -180,13 +333,22 @@ export function SessionScreen() {
       onMouseDown={handleTouchStart}
       onMouseUp={handleTouchEnd}
     >
+      {/* Audio indicator */}
+      {hasAudio && (
+        <div className="fixed top-6 left-6 flex items-center gap-2 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full">
+          <svg className="w-4 h-4 text-peach-500" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 3v18l-7-5H2V8h3l7-5zm10.5 9c0-3.33-2.27-6.18-5.5-7.37v1.72c2.3 1.09 4 3.39 4 5.65s-1.7 4.56-4 5.65v1.72c3.23-1.19 5.5-4.04 5.5-7.37zm-3.47 0c0-1.88-1.1-3.59-2.53-4.4v8.8c1.43-.81 2.53-2.52 2.53-4.4z"/>
+          </svg>
+          <span className="text-xs text-peach-600">Audio</span>
+        </div>
+      )}
+
       {/* Guidance text container */}
       <div className="absolute inset-0 flex items-center justify-center p-8">
         <GuidanceText
           text={guidanceText}
           visible={showGuidance && !!guidanceText}
           size={textSize}
-          onClick={cycleTextSize}
         />
 
         {/* Silence indicator */}
@@ -222,7 +384,8 @@ export function SessionScreen() {
         onPlay={play}
         onPause={pause}
         onRestart={restart}
-        autoHide={state === 'playing' || state === 'silence'}
+        onSkipNext={skipToNextSection}
+        autoHide={false}
       />
 
       {/* Exit confirmation modal */}

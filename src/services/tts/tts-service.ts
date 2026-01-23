@@ -5,11 +5,12 @@
 
 import type { TTSProvider, TTSOptions, TTSResult, Voice } from '@/types'
 import { MockTTSProvider } from './MockTTSProvider'
+import { GoogleTTSProvider } from './GoogleTTSProvider'
 
 /**
  * TTS Provider type configuration
  */
-export type TTSProviderType = 'mock' | 'elevenlabs'
+export type TTSProviderType = 'mock' | 'google'
 
 /**
  * TTS Service configuration
@@ -17,6 +18,8 @@ export type TTSProviderType = 'mock' | 'elevenlabs'
 export interface TTSServiceConfig {
   /** Provider to use */
   provider: TTSProviderType
+  /** API key for the provider (required for google) */
+  apiKey?: string
   /** Default voice ID */
   defaultVoiceId?: string
 }
@@ -26,15 +29,22 @@ export interface TTSServiceConfig {
  */
 export class TTSService implements TTSProvider {
   private provider: TTSProvider
+  private providerType: TTSProviderType
   private defaultVoiceId: string
 
   constructor(config: TTSServiceConfig = { provider: 'mock' }) {
+    this.providerType = config.provider
+
     // Select provider based on config
     switch (config.provider) {
-      case 'elevenlabs':
-        // Future: ElevenLabsProvider
-        console.warn('ElevenLabs provider not yet implemented, using mock')
-        this.provider = new MockTTSProvider()
+      case 'google':
+        if (!config.apiKey) {
+          console.warn('Google TTS provider requires API key, falling back to mock')
+          this.provider = new MockTTSProvider()
+          this.providerType = 'mock'
+        } else {
+          this.provider = new GoogleTTSProvider(config.apiKey)
+        }
         break
       case 'mock':
       default:
@@ -45,9 +55,9 @@ export class TTSService implements TTSProvider {
     // Set default voice ID
     this.defaultVoiceId =
       config.defaultVoiceId ??
-      (this.provider instanceof MockTTSProvider
+      (this.provider instanceof MockTTSProvider || this.provider instanceof GoogleTTSProvider
         ? this.provider.getDefaultVoiceId()
-        : 'rachel')
+        : 'Aoede')
   }
 
   /**
@@ -95,6 +105,20 @@ export class TTSService implements TTSProvider {
   setDefaultVoiceId(voiceId: string): void {
     this.defaultVoiceId = voiceId
   }
+
+  /**
+   * Get current provider type
+   */
+  getProviderType(): TTSProviderType {
+    return this.providerType
+  }
+
+  /**
+   * Check if using real TTS (not mock)
+   */
+  isRealTTS(): boolean {
+    return this.providerType !== 'mock'
+  }
 }
 
 // Singleton instance for easy access
@@ -105,12 +129,25 @@ let ttsServiceInstance: TTSService | null = null
  */
 export function getTTSService(): TTSService {
   if (!ttsServiceInstance) {
-    // Read provider from environment or default to mock
+    // Read provider and API key from environment
     const providerType =
       (import.meta.env.VITE_TTS_PROVIDER as TTSProviderType) || 'mock'
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
 
-    ttsServiceInstance = new TTSService({ provider: providerType })
+    ttsServiceInstance = new TTSService({
+      provider: providerType,
+      apiKey,
+    })
   }
+  return ttsServiceInstance
+}
+
+/**
+ * Initialize TTS service with specific config
+ * Call this to override the default singleton configuration
+ */
+export function initTTSService(config: TTSServiceConfig): TTSService {
+  ttsServiceInstance = new TTSService(config)
   return ttsServiceInstance
 }
 
