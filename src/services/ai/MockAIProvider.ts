@@ -8,10 +8,42 @@ import type {
   AIGenerationOptions,
   AIGenerationProgress,
   AIClarifyingQuestion,
+  Segment,
 } from '@/types'
 import type { Ritual, RitualSection, RitualTone } from '@/types'
 import { Timestamp } from '@/types'
 import { GENERATION_STAGES, MOCK_DELAYS } from '@/types/constants'
+
+/**
+ * Helper to create segments from guidance text
+ */
+function createSegmentsFromText(
+  sectionId: string,
+  guidanceText: string,
+  totalDuration: number
+): Segment[] {
+  if (!guidanceText) {
+    return [{
+      id: `${sectionId}-seg-0`,
+      type: 'silence',
+      durationSeconds: totalDuration,
+    }]
+  }
+
+  const introSilence = 2
+  const wordCount = guidanceText.split(' ').length
+  const estimatedSpeechDuration = Math.min(
+    totalDuration - 4,
+    Math.ceil((wordCount / 150) * 60)
+  )
+  const outroSilence = Math.max(0, totalDuration - introSilence - estimatedSpeechDuration)
+
+  return [
+    { id: `${sectionId}-seg-0`, type: 'silence', durationSeconds: introSilence },
+    { id: `${sectionId}-seg-1`, type: 'text', text: guidanceText, durationSeconds: estimatedSpeechDuration },
+    { id: `${sectionId}-seg-2`, type: 'silence', durationSeconds: outroSilence },
+  ]
+}
 
 export class MockAIProvider implements AIProvider {
   /**
@@ -107,31 +139,39 @@ export class MockAIProvider implements AIProvider {
 
     // Intro (10% of time, min 30s)
     const introDuration = Math.max(30, Math.floor(options.duration * 0.1))
+    const introId = `section-intro-${Date.now()}`
+    const introText = this.generateIntroText(options.tone)
     sections.push({
-      id: `section-intro-${Date.now()}`,
+      id: introId,
       type: 'intro',
       durationSeconds: introDuration,
-      guidanceText: this.generateIntroText(options.tone),
+      segments: createSegmentsFromText(introId, introText, introDuration),
+      guidanceText: introText,
     })
     remainingTime -= introDuration
 
     // Body (70% of remaining time)
     const bodyDuration = Math.floor(remainingTime * 0.7)
+    const bodyId = `section-body-${Date.now()}`
+    const bodyText = this.generateBodyText(options.tone, options.instructions)
     sections.push({
-      id: `section-body-${Date.now()}`,
+      id: bodyId,
       type: 'body',
       durationSeconds: bodyDuration,
-      guidanceText: this.generateBodyText(options.tone, options.instructions),
+      segments: createSegmentsFromText(bodyId, bodyText, bodyDuration),
+      guidanceText: bodyText,
     })
     remainingTime -= bodyDuration
 
     // Silence (if requested, 15% of remaining)
     if (options.includeSilence) {
       const silenceDuration = Math.floor(remainingTime * 0.15)
+      const silenceId = `section-silence-${Date.now()}`
       sections.push({
-        id: `section-silence-${Date.now()}`,
+        id: silenceId,
         type: 'silence',
         durationSeconds: silenceDuration,
+        segments: createSegmentsFromText(silenceId, '', silenceDuration),
         guidanceText: '',
         silenceDuration,
       })
@@ -139,11 +179,14 @@ export class MockAIProvider implements AIProvider {
     }
 
     // Closing (remaining time)
+    const closingId = `section-closing-${Date.now()}`
+    const closingText = this.generateClosingText(options.tone)
     sections.push({
-      id: `section-closing-${Date.now()}`,
+      id: closingId,
       type: 'closing',
       durationSeconds: remainingTime,
-      guidanceText: this.generateClosingText(options.tone),
+      segments: createSegmentsFromText(closingId, closingText, remainingTime),
+      guidanceText: closingText,
     })
 
     return sections

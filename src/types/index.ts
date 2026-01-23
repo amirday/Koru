@@ -21,10 +21,34 @@ export type {
   UserPreferences,
   VoiceOption,
   ThemeOption,
+  AudioStatus,
 } from './models'
 
-// Export Timestamp (both type and value in single export)
-export { Timestamp } from './models'
+// Export Timestamp and helpers (both type and value in single export)
+export { Timestamp, getSectionGuidanceText } from './models'
+
+// Segment types for TTS/audio
+export type { Segment, SilenceConfig } from './segment'
+
+// Segment utility functions
+export {
+  createTextSegment,
+  createSilenceSegment,
+  getTextFromSegments,
+  getTotalDuration,
+  isTextSegment,
+  isSilenceSegment,
+} from './segment'
+
+// Voice types for TTS
+export type {
+  Voice,
+  VoiceManifest,
+  UserVoicePreferences,
+  TTSOptions,
+  TTSResult,
+  TTSProvider,
+} from './voice'
 
 // Service interfaces
 export type {

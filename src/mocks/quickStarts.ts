@@ -3,8 +3,39 @@
  * Ready-to-use rituals for common situations throughout the day
  */
 
-import type { Ritual } from '@/types'
+import type { Ritual, Segment } from '@/types'
 import { Timestamp } from '@/types'
+
+/**
+ * Helper to create segments from guidance text
+ */
+function createSegmentsFromText(
+  sectionId: string,
+  guidanceText: string,
+  totalDuration: number
+): Segment[] {
+  if (!guidanceText) {
+    return [{
+      id: `${sectionId}-seg-0`,
+      type: 'silence',
+      durationSeconds: totalDuration,
+    }]
+  }
+
+  const introSilence = 2
+  const wordCount = guidanceText.split(' ').length
+  const estimatedSpeechDuration = Math.min(
+    totalDuration - 4,
+    Math.ceil((wordCount / 150) * 60)
+  )
+  const outroSilence = Math.max(0, totalDuration - introSilence - estimatedSpeechDuration)
+
+  return [
+    { id: `${sectionId}-seg-0`, type: 'silence', durationSeconds: introSilence },
+    { id: `${sectionId}-seg-1`, type: 'text', text: guidanceText, durationSeconds: estimatedSpeechDuration },
+    { id: `${sectionId}-seg-2`, type: 'silence', durationSeconds: outroSilence },
+  ]
+}
 
 /**
  * Quick start rituals (3-10 minutes)
@@ -26,6 +57,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-reset-intro',
         type: 'intro',
         durationSeconds: 20,
+        segments: createSegmentsFromText(
+          'section-reset-intro',
+          'Pause. Close your eyes. You\'re safe. Let\'s reset together.',
+          20
+        ),
         guidanceText:
           'Pause. Close your eyes. You\'re safe. Let\'s reset together.',
       },
@@ -33,6 +69,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-reset-body',
         type: 'body',
         durationSeconds: 130,
+        segments: createSegmentsFromText(
+          'section-reset-body',
+          'Place one hand on your chest, one on your belly. Feel your breath. Breathe in slowly for four counts... hold for four... out for six. Again. In for four... hold... out for six. Let each exhale release the tension. You\'re here. You\'re okay.',
+          130
+        ),
         guidanceText:
           'Place one hand on your chest, one on your belly. Feel your breath. Breathe in slowly for four counts... hold for four... out for six. Again. In for four... hold... out for six. Let each exhale release the tension. You\'re here. You\'re okay.',
       },
@@ -40,6 +81,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-reset-closing',
         type: 'closing',
         durationSeconds: 30,
+        segments: createSegmentsFromText(
+          'section-reset-closing',
+          'You\'ve reset. Take one more full breath. When you open your eyes, notice how you feel. You can do this anytime.',
+          30
+        ),
         guidanceText:
           'You\'ve reset. Take one more full breath. When you open your eyes, notice how you feel. You can do this anytime.',
       },
@@ -66,6 +112,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-fp-intro',
         type: 'intro',
         durationSeconds: 30,
+        segments: createSegmentsFromText(
+          'section-fp-intro',
+          'Time to prime your focus. Sit tall. Close your eyes. Let\'s clear the mental clutter.',
+          30
+        ),
         guidanceText:
           'Time to prime your focus. Sit tall. Close your eyes. Let\'s clear the mental clutter.',
       },
@@ -73,6 +124,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-fp-body',
         type: 'body',
         durationSeconds: 240,
+        segments: createSegmentsFromText(
+          'section-fp-body',
+          'Count your breaths. One... two... three... up to ten, then start again. Each time your mind wanders, return to one. This is the work. You\'re training attention. Stay with it. Your focus is sharpening with each return.',
+          240
+        ),
         guidanceText:
           'Count your breaths. One... two... three... up to ten, then start again. Each time your mind wanders, return to one. This is the work. You\'re training attention. Stay with it. Your focus is sharpening with each return.',
       },
@@ -80,6 +136,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-fp-closing',
         type: 'closing',
         durationSeconds: 30,
+        segments: createSegmentsFromText(
+          'section-fp-closing',
+          'Your mind is clear. Your attention is ready. Open your eyes and bring this focus to your work.',
+          30
+        ),
         guidanceText:
           'Your mind is clear. Your attention is ready. Open your eyes and bring this focus to your work.',
       },
@@ -106,6 +167,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-wd-intro',
         type: 'intro',
         durationSeconds: 45,
+        segments: createSegmentsFromText(
+          'section-wd-intro',
+          'The day is done. You can lie down or sit comfortably. Close your eyes. It\'s time to wind down.',
+          45
+        ),
         guidanceText:
           'The day is done. You can lie down or sit comfortably. Close your eyes. It\'s time to wind down.',
       },
@@ -113,6 +179,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-wd-body',
         type: 'body',
         durationSeconds: 300,
+        segments: createSegmentsFromText(
+          'section-wd-body',
+          'Scan through your body. Release any remaining tension. Let your jaw soften. Shoulders drop. Hands open. Each exhale, let go a little more. The day is complete. You did enough. Rest is coming.',
+          300
+        ),
         guidanceText:
           'Scan through your body. Release any remaining tension. Let your jaw soften. Shoulders drop. Hands open. Each exhale, let go a little more. The day is complete. You did enough. Rest is coming.',
       },
@@ -120,6 +191,7 @@ export const quickStarts: Ritual[] = [
         id: 'section-wd-silence',
         type: 'silence',
         durationSeconds: 180,
+        segments: createSegmentsFromText('section-wd-silence', '', 180),
         guidanceText: '',
         silenceDuration: 180,
       },
@@ -127,6 +199,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-wd-closing',
         type: 'closing',
         durationSeconds: 75,
+        segments: createSegmentsFromText(
+          'section-wd-closing',
+          'Let yourself drift. Sleep will come. When you\'re ready, open your eyes softly, or let them stay closed and rest.',
+          75
+        ),
         guidanceText:
           'Let yourself drift. Sleep will come. When you\'re ready, open your eyes softly, or let them stay closed and rest.',
       },
@@ -153,6 +230,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-grat-intro',
         type: 'intro',
         durationSeconds: 40,
+        segments: createSegmentsFromText(
+          'section-grat-intro',
+          'Find a comfortable seat. Close your eyes. In the next few minutes, we\'ll explore what\'s going well.',
+          40
+        ),
         guidanceText:
           'Find a comfortable seat. Close your eyes. In the next few minutes, we\'ll explore what\'s going well.',
       },
@@ -160,6 +242,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-grat-body',
         type: 'body',
         durationSeconds: 320,
+        segments: createSegmentsFromText(
+          'section-grat-body',
+          'Bring to mind one thing you\'re grateful for today. It can be small—a warm cup of coffee, a kind word, a moment of quiet. Notice how it feels to remember this. Now bring to mind another. And another. Let gratitude arise naturally. Each acknowledgment is a gift. Notice if your perspective is shifting, even slightly.',
+          320
+        ),
         guidanceText:
           'Bring to mind one thing you\'re grateful for today. It can be small—a warm cup of coffee, a kind word, a moment of quiet. Notice how it feels to remember this. Now bring to mind another. And another. Let gratitude arise naturally. Each acknowledgment is a gift. Notice if your perspective is shifting, even slightly.',
       },
@@ -167,6 +254,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-grat-closing',
         type: 'closing',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-grat-closing',
+          'Gratitude is always available. You can return to this practice anytime. Take a breath. Open your eyes.',
+          60
+        ),
         guidanceText:
           'Gratitude is always available. You can return to this practice anytime. Take a breath. Open your eyes.',
       },
@@ -193,6 +285,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-conf-intro',
         type: 'intro',
         durationSeconds: 45,
+        segments: createSegmentsFromText(
+          'section-conf-intro',
+          'Sit up straight. Feel your feet on the ground. You\'re here to connect with your strength. Close your eyes.',
+          45
+        ),
         guidanceText:
           'Sit up straight. Feel your feet on the ground. You\'re here to connect with your strength. Close your eyes.',
       },
@@ -200,6 +297,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-conf-body',
         type: 'body',
         durationSeconds: 375,
+        segments: createSegmentsFromText(
+          'section-conf-body',
+          'Recall a time you overcame something difficult. See that moment. Feel the strength that carried you through. That strength is still in you. It\'s here now. Breathe into your chest. Feel the solidity. You\'ve done hard things before. You can do them again. Bring to mind what\'s ahead. See yourself meeting it with courage. Not perfectly—but with strength. You are ready.',
+          375
+        ),
         guidanceText:
           'Recall a time you overcame something difficult. See that moment. Feel the strength that carried you through. That strength is still in you. It\'s here now. Breathe into your chest. Feel the solidity. You\'ve done hard things before. You can do them again. Bring to mind what\'s ahead. See yourself meeting it with courage. Not perfectly—but with strength. You are ready.',
       },
@@ -207,6 +309,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-conf-closing',
         type: 'closing',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-conf-closing',
+          'Your strength is always with you. Take a full breath. Open your eyes. Step forward with confidence.',
+          60
+        ),
         guidanceText:
           'Your strength is always with you. Take a full breath. Open your eyes. Step forward with confidence.',
       },
@@ -233,6 +340,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-st-intro',
         type: 'intro',
         durationSeconds: 30,
+        segments: createSegmentsFromText(
+          'section-st-intro',
+          'Sit comfortably. Close your eyes. The timer is set. Just sit.',
+          30
+        ),
         guidanceText:
           'Sit comfortably. Close your eyes. The timer is set. Just sit.',
       },
@@ -240,6 +352,7 @@ export const quickStarts: Ritual[] = [
         id: 'section-st-silence',
         type: 'silence',
         durationSeconds: 540,
+        segments: createSegmentsFromText('section-st-silence', '', 540),
         guidanceText: '',
         silenceDuration: 540,
       },
@@ -247,6 +360,11 @@ export const quickStarts: Ritual[] = [
         id: 'section-st-closing',
         type: 'closing',
         durationSeconds: 30,
+        segments: createSegmentsFromText(
+          'section-st-closing',
+          'Gently deepen your breath. When you\'re ready, open your eyes.',
+          30
+        ),
         guidanceText:
           'Gently deepen your breath. When you\'re ready, open your eyes.',
       },

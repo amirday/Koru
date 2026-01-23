@@ -68,10 +68,17 @@ export function StructureTab({
   }
 
   const handleAddSection = (type: RitualSectionType) => {
+    const sectionId = `section-${Date.now()}`
+    const duration = type === 'silence' ? 60 : 120
     const newSection: RitualSection = {
-      id: `section-${Date.now()}`,
+      id: sectionId,
       type,
-      durationSeconds: type === 'silence' ? 60 : 120,
+      durationSeconds: duration,
+      segments: [{
+        id: `${sectionId}-seg-0`,
+        type: 'silence',
+        durationSeconds: duration,
+      }],
       guidanceText: '',
       ...(type === 'silence' ? { silenceDuration: 60 } : {}),
     }

@@ -54,13 +54,25 @@ export interface OpenAIChatCompletionResponse {
 // ====================
 
 /**
+ * Raw segment structure from OpenAI response
+ */
+export interface OpenAISegmentResponse {
+  type: 'text' | 'silence'
+  text?: string
+  durationSeconds: number
+}
+
+/**
  * Raw section structure from OpenAI response
  * Before transformation to RitualSection
  */
 export interface OpenAIRitualSectionResponse {
   type: 'intro' | 'body' | 'silence' | 'transition' | 'closing'
   durationSeconds: number
-  guidanceText: string
+  /** @deprecated Use segments instead */
+  guidanceText?: string
+  /** Ordered list of text/silence segments */
+  segments?: OpenAISegmentResponse[]
 }
 
 /**

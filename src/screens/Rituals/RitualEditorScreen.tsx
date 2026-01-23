@@ -65,25 +65,29 @@ export function RitualEditorScreen() {
       }
     } else {
       // New ritual
+      const now = Date.now()
       setTitle('New Ritual')
       setInstructions('')
       setSections([
         {
-          id: `section-${Date.now()}-1`,
+          id: `section-${now}-1`,
           type: 'intro',
           durationSeconds: 60,
+          segments: [{ id: `section-${now}-1-seg-0`, type: 'silence', durationSeconds: 60 }],
           guidanceText: '',
         },
         {
-          id: `section-${Date.now()}-2`,
+          id: `section-${now}-2`,
           type: 'body',
           durationSeconds: 300,
+          segments: [{ id: `section-${now}-2-seg-0`, type: 'silence', durationSeconds: 300 }],
           guidanceText: '',
         },
         {
-          id: `section-${Date.now()}-3`,
+          id: `section-${now}-3`,
           type: 'closing',
           durationSeconds: 60,
+          segments: [{ id: `section-${now}-3-seg-0`, type: 'silence', durationSeconds: 60 }],
           guidanceText: '',
         },
       ])

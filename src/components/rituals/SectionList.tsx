@@ -4,6 +4,7 @@
 
 import { useState } from 'react'
 import type { RitualSection, RitualSectionType } from '@/types'
+import { getSectionGuidanceText } from '@/types'
 
 export interface SectionListProps {
   /** Ritual sections */
@@ -105,7 +106,8 @@ export function SectionList({
     <div className="space-y-2">
       {sections.map((section, index) => {
         const isExpanded = expandedIds.has(section.id)
-        const hasContent = section.guidanceText && section.type !== 'silence'
+        const sectionText = getSectionGuidanceText(section)
+        const hasContent = sectionText && section.type !== 'silence'
 
         return (
           <div
@@ -165,7 +167,7 @@ export function SectionList({
               <div className="px-4 pb-4 pt-0">
                 <div className="pl-9 border-l-2 border-peach-200 ml-3">
                   <p className="text-sm text-calm-700 leading-relaxed whitespace-pre-wrap pl-4">
-                    {section.guidanceText}
+                    {sectionText}
                   </p>
                 </div>
               </div>

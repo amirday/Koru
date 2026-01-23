@@ -21,3 +21,19 @@ export type {
   NotificationPermission,
   NotificationService,
 } from './notification/notification-service'
+
+// TTS
+export { TTSService, MockTTSProvider, getTTSService, resetTTSService } from './tts'
+export type { TTSProviderType, TTSServiceConfig } from './tts'
+
+// Audio
+export { AudioStitcher, audioStitcher, AudioCache, audioCache } from './audio'
+export type { AudioSegment, FadeOptions, AudioCacheEntry } from './audio'
+export {
+  getAudioDuration,
+  createAudioUrl,
+  revokeAudioUrl,
+  isWebAudioSupported,
+  estimateSpeechDuration,
+  formatDuration,
+} from './audio'

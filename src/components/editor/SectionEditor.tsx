@@ -3,8 +3,40 @@
  */
 
 import { useState } from 'react'
-import type { RitualSection, RitualSectionType } from '@/types'
+import type { RitualSection, RitualSectionType, Segment } from '@/types'
+import { getSectionGuidanceText } from '@/types'
 import { Toggle, Slider } from '@/components/ui'
+
+/**
+ * Helper to create segments from guidance text
+ */
+function createSegmentsFromText(
+  sectionId: string,
+  guidanceText: string,
+  totalDuration: number
+): Segment[] {
+  if (!guidanceText) {
+    return [{
+      id: `${sectionId}-seg-0`,
+      type: 'silence',
+      durationSeconds: totalDuration,
+    }]
+  }
+
+  const introSilence = 2
+  const wordCount = guidanceText.split(' ').length
+  const estimatedSpeechDuration = Math.min(
+    totalDuration - 4,
+    Math.ceil((wordCount / 150) * 60)
+  )
+  const outroSilence = Math.max(0, totalDuration - introSilence - estimatedSpeechDuration)
+
+  return [
+    { id: `${sectionId}-seg-0`, type: 'silence', durationSeconds: introSilence },
+    { id: `${sectionId}-seg-1`, type: 'text', text: guidanceText, durationSeconds: estimatedSpeechDuration },
+    { id: `${sectionId}-seg-2`, type: 'silence', durationSeconds: outroSilence },
+  ]
+}
 
 export interface SectionEditorProps {
   /** Section to edit */
@@ -87,18 +119,27 @@ export function SectionEditor({
   const [isExpanded, setIsExpanded] = useState(false)
 
   const handleDurationChange = (value: number) => {
+    // Update duration and recalculate segments
+    const currentText = getSectionGuidanceText(section)
     onUpdate({
       ...section,
       durationSeconds: value,
+      segments: createSegmentsFromText(section.id, currentText, value),
     })
   }
 
   const handleGuidanceChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value
+    // Update both guidanceText (legacy) and segments
     onUpdate({
       ...section,
-      guidanceText: e.target.value,
+      guidanceText: newText,
+      segments: createSegmentsFromText(section.id, newText, section.durationSeconds),
     })
   }
+
+  // Get current guidance text from segments or legacy field
+  const currentGuidanceText = getSectionGuidanceText(section)
 
   return (
     <div
@@ -202,7 +243,7 @@ export function SectionEditor({
                 Guidance Text
               </label>
               <textarea
-                value={section.guidanceText}
+                value={currentGuidanceText}
                 onChange={handleGuidanceChange}
                 rows={4}
                 className="w-full px-3 py-2 text-sm rounded-lg border border-calm-300 focus:outline-none focus:ring-2 focus:ring-peach-500 focus:border-peach-500 resize-none"

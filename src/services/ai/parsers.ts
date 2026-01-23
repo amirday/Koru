@@ -3,10 +3,10 @@
  * Handles JSON extraction, validation, and transformation to Ritual model
  */
 
-import type { Ritual, RitualSection, RitualSectionType } from '@/types'
+import type { Ritual, RitualSection, RitualSectionType, Segment } from '@/types'
 import type { AIGenerationOptions } from '@/types'
-import { Timestamp } from '@/types'
-import type { OpenAIRitualResponse, OpenAIRitualSectionResponse } from '@/types/openai'
+import { Timestamp, getTextFromSegments } from '@/types'
+import type { OpenAIRitualResponse, OpenAIRitualSectionResponse, OpenAISegmentResponse } from '@/types/openai'
 
 /**
  * Extract JSON from OpenAI response content
@@ -69,20 +69,51 @@ function isValidRitualResponse(obj: unknown): obj is OpenAIRitualResponse {
 }
 
 /**
+ * Type guard for segment validation
+ */
+function isValidSegment(obj: unknown): obj is OpenAISegmentResponse {
+  if (typeof obj !== 'object' || obj === null) return false
+
+  const segment = obj as Record<string, unknown>
+
+  // Must have type and durationSeconds
+  if (typeof segment.type !== 'string') return false
+  if (!['text', 'silence'].includes(segment.type)) return false
+  if (typeof segment.durationSeconds !== 'number' || segment.durationSeconds < 0) return false
+
+  // Text segments must have text field
+  if (segment.type === 'text' && typeof segment.text !== 'string') return false
+
+  return true
+}
+
+/**
  * Type guard for section validation
+ * Supports both old guidanceText format and new segments format
  */
 function isValidSection(obj: unknown): obj is OpenAIRitualSectionResponse {
   if (typeof obj !== 'object' || obj === null) return false
 
   const section = obj as Record<string, unknown>
 
-  return (
-    typeof section.type === 'string' &&
-    ['intro', 'body', 'silence', 'transition', 'closing'].includes(section.type) &&
-    typeof section.durationSeconds === 'number' &&
-    section.durationSeconds > 0 &&
-    typeof section.guidanceText === 'string'
-  )
+  // Type and duration are required
+  if (typeof section.type !== 'string') return false
+  if (!['intro', 'body', 'silence', 'transition', 'closing'].includes(section.type)) return false
+  if (typeof section.durationSeconds !== 'number' || section.durationSeconds <= 0) return false
+
+  // Either segments array OR guidanceText must be present
+  const hasSegments = Array.isArray(section.segments) && section.segments.length > 0
+  const hasGuidanceText = typeof section.guidanceText === 'string'
+
+  if (!hasSegments && !hasGuidanceText) return false
+
+  // Validate segments if present
+  if (hasSegments) {
+    const segments = section.segments as unknown[]
+    if (!segments.every(isValidSegment)) return false
+  }
+
+  return true
 }
 
 /**
@@ -141,6 +172,64 @@ export function adjustDurations(
 }
 
 /**
+ * Convert OpenAI segments to our Segment type, or create segments from guidanceText
+ */
+function convertToSegments(
+  section: OpenAIRitualSectionResponse,
+  sectionId: string
+): Segment[] {
+  // If section has segments, convert them
+  if (section.segments && section.segments.length > 0) {
+    return section.segments.map((seg, idx) => ({
+      id: `${sectionId}-seg-${idx}`,
+      type: seg.type,
+      text: seg.text,
+      durationSeconds: seg.durationSeconds,
+    }))
+  }
+
+  // Legacy format: convert guidanceText to a single text segment with surrounding silence
+  const guidanceText = section.guidanceText || ''
+  const segments: Segment[] = []
+
+  if (section.type === 'silence' || !guidanceText) {
+    // Pure silence section
+    segments.push({
+      id: `${sectionId}-seg-0`,
+      type: 'silence',
+      durationSeconds: section.durationSeconds,
+    })
+  } else {
+    // Add intro silence (2s), text, and outro silence (remaining)
+    const introSilence = 2
+    const estimatedSpeechDuration = Math.min(
+      section.durationSeconds - 4, // Leave at least 2s for outro
+      Math.ceil((guidanceText.split(' ').length / 150) * 60) // ~150 words per minute
+    )
+    const outroSilence = Math.max(0, section.durationSeconds - introSilence - estimatedSpeechDuration)
+
+    segments.push({
+      id: `${sectionId}-seg-0`,
+      type: 'silence',
+      durationSeconds: introSilence,
+    })
+    segments.push({
+      id: `${sectionId}-seg-1`,
+      type: 'text',
+      text: guidanceText,
+      durationSeconds: estimatedSpeechDuration,
+    })
+    segments.push({
+      id: `${sectionId}-seg-2`,
+      type: 'silence',
+      durationSeconds: outroSilence,
+    })
+  }
+
+  return segments
+}
+
+/**
  * Transform OpenAI response to full Ritual model
  */
 export function transformToRitual(
@@ -153,17 +242,24 @@ export function transformToRitual(
   // Adjust durations to match target
   const adjustedSections = adjustDurations(response.sections, options.duration)
 
-  // Transform sections
-  const sections: RitualSection[] = adjustedSections.map((section, index) => ({
-    id: `section-${section.type}-${Date.now()}-${index}`,
-    type: section.type as RitualSectionType,
-    durationSeconds: section.durationSeconds,
-    guidanceText: section.guidanceText,
-    // Add silence duration for silence sections
-    ...(section.type === 'silence' && {
-      silenceDuration: section.durationSeconds,
-    }),
-  }))
+  // Transform sections with segments
+  const sections: RitualSection[] = adjustedSections.map((section, index) => {
+    const sectionId = `section-${section.type}-${Date.now()}-${index}`
+    const segments = convertToSegments(section, sectionId)
+
+    return {
+      id: sectionId,
+      type: section.type as RitualSectionType,
+      durationSeconds: section.durationSeconds,
+      segments,
+      // Keep guidanceText for backwards compatibility
+      guidanceText: getTextFromSegments(segments),
+      // Add silence duration for silence sections
+      ...(section.type === 'silence' && {
+        silenceDuration: section.durationSeconds,
+      }),
+    }
+  })
 
   return {
     id: ritualId,

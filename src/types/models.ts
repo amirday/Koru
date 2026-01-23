@@ -112,6 +112,11 @@ export interface RitualStatistics {
 }
 
 /**
+ * Audio generation status
+ */
+export type AudioStatus = 'pending' | 'generating' | 'ready' | 'error'
+
+/**
  * Full ritual with content and statistics combined
  * Use this type when you need both content and usage stats in one object
  * Note: Statistics can be null if not yet loaded/created
@@ -119,27 +124,58 @@ export interface RitualStatistics {
 export interface Ritual extends RitualContent {
   /** Usage statistics (null if not loaded) */
   statistics: RitualStatistics | null
+  /** Audio generation state */
+  audioStatus?: AudioStatus
+  /** Selected voice for TTS */
+  voiceId?: string
 }
 
 // ====================
 // Ritual Section
 // ====================
 
+import type { Segment, SilenceConfig } from './segment'
+import { getTextFromSegments } from './segment'
+
 export type RitualSectionType = 'intro' | 'body' | 'silence' | 'transition' | 'closing'
 
+/**
+ * A ritual section contains an ordered list of segments.
+ * Each segment is either text (to be spoken) or silence (pause).
+ */
 export interface RitualSection {
   /** Unique identifier */
   id: string
   /** Section type */
   type: RitualSectionType
-  /** Duration of this section in seconds */
+  /** Total target duration for this section in seconds */
   durationSeconds: number
-  /** Spoken guidance text (empty for silence) */
-  guidanceText: string
+  /** Ordered list of text/silence segments */
+  segments: Segment[]
+  /** @deprecated Use segments instead - kept for backwards compatibility */
+  guidanceText?: string
   /** For silence type: duration of silence in seconds */
   silenceDuration?: number
   /** Optional soundscape override for this section */
   soundscape?: Soundscape
+  /** Configuration for silence distribution */
+  silenceConfig?: SilenceConfig
+  /** Cached combined audio URL */
+  audioUrl?: string
+  /** Actual combined audio duration in seconds */
+  audioDurationSeconds?: number
+  /** Cache invalidation timestamp */
+  audioGeneratedAt?: string
+}
+
+/**
+ * Helper to get guidance text from a section (from segments or legacy field)
+ */
+export function getSectionGuidanceText(section: RitualSection): string {
+  if (section.segments && section.segments.length > 0) {
+    return getTextFromSegments(section.segments)
+  }
+  return section.guidanceText ?? ''
 }
 
 // ====================

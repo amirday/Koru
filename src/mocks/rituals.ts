@@ -3,8 +3,55 @@
  * Provides 8 complete rituals with varying tones, durations, and purposes
  */
 
-import type { Ritual } from '@/types'
+import type { Ritual, Segment } from '@/types'
 import { Timestamp } from '@/types'
+
+/**
+ * Helper to create segments from guidance text
+ * Creates: intro silence, text segment, outro silence
+ */
+function createSegmentsFromText(
+  sectionId: string,
+  guidanceText: string,
+  totalDuration: number
+): Segment[] {
+  if (!guidanceText) {
+    // Pure silence section
+    return [{
+      id: `${sectionId}-seg-0`,
+      type: 'silence',
+      durationSeconds: totalDuration,
+    }]
+  }
+
+  // Calculate durations
+  const introSilence = 2
+  const wordCount = guidanceText.split(' ').length
+  const estimatedSpeechDuration = Math.min(
+    totalDuration - 4,
+    Math.ceil((wordCount / 150) * 60)
+  )
+  const outroSilence = Math.max(0, totalDuration - introSilence - estimatedSpeechDuration)
+
+  return [
+    {
+      id: `${sectionId}-seg-0`,
+      type: 'silence',
+      durationSeconds: introSilence,
+    },
+    {
+      id: `${sectionId}-seg-1`,
+      type: 'text',
+      text: guidanceText,
+      durationSeconds: estimatedSpeechDuration,
+    },
+    {
+      id: `${sectionId}-seg-2`,
+      type: 'silence',
+      durationSeconds: outroSilence,
+    },
+  ]
+}
 
 /**
  * Complete mock rituals with content and statistics
@@ -25,6 +72,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-mc-intro',
         type: 'intro',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-mc-intro',
+          'Welcome to this morning practice. Find a comfortable seat, allowing your body to settle. Let your eyes gently close, or soften your gaze downward. Take a moment to arrive here, just as you are.',
+          60
+        ),
         guidanceText:
           'Welcome to this morning practice. Find a comfortable seat, allowing your body to settle. Let your eyes gently close, or soften your gaze downward. Take a moment to arrive here, just as you are.',
       },
@@ -32,6 +84,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-mc-body',
         type: 'body',
         durationSeconds: 360,
+        segments: createSegmentsFromText(
+          'section-mc-body',
+          'Bring your attention to your breath. Notice the natural rhythm of breathing in... and breathing out. Feel the gentle rise and fall of your chest or belly. There\'s nothing to fix, nothing to change. Just notice. As you breathe, imagine breathing in calm, breathing out anything you don\'t need for this day. Let each breath settle you deeper into this moment.',
+          360
+        ),
         guidanceText:
           'Bring your attention to your breath. Notice the natural rhythm of breathing in... and breathing out. Feel the gentle rise and fall of your chest or belly. There\'s nothing to fix, nothing to change. Just notice. As you breathe, imagine breathing in calm, breathing out anything you don\'t need for this day. Let each breath settle you deeper into this moment.',
       },
@@ -39,6 +96,7 @@ export const mockRituals: Ritual[] = [
         id: 'section-mc-silence',
         type: 'silence',
         durationSeconds: 120,
+        segments: createSegmentsFromText('section-mc-silence', '', 120),
         guidanceText: '',
         silenceDuration: 120,
       },
@@ -46,6 +104,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-mc-closing',
         type: 'closing',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-mc-closing',
+          'As we close, take a moment to appreciate this time you\'ve given yourself. Wiggle your fingers and toes. When you\'re ready, gently open your eyes. Carry this calm presence with you into your day.',
+          60
+        ),
         guidanceText:
           'As we close, take a moment to appreciate this time you\'ve given yourself. Wiggle your fingers and toes. When you\'re ready, gently open your eyes. Carry this calm presence with you into your day.',
       },
@@ -82,6 +145,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-df-intro',
         type: 'intro',
         durationSeconds: 90,
+        segments: createSegmentsFromText(
+          'section-df-intro',
+          'Let\'s build your focus. Sit up tall, shoulders back. Close your eyes and commit to this practice. You\'ve shown up—that\'s what matters. In the next fifteen minutes, we\'ll clear the mental clutter and sharpen your attention.',
+          90
+        ),
         guidanceText:
           'Let\'s build your focus. Sit up tall, shoulders back. Close your eyes and commit to this practice. You\'ve shown up—that\'s what matters. In the next fifteen minutes, we\'ll clear the mental clutter and sharpen your attention.',
       },
@@ -89,6 +157,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-df-body1',
         type: 'body',
         durationSeconds: 300,
+        segments: createSegmentsFromText(
+          'section-df-body1',
+          'Bring all your attention to your breath. Count each exhale. One... two... three... up to ten, then start again. When your mind wanders—and it will—notice without judgment and return to one. This is training. Every time you return, you\'re strengthening your focus muscle.',
+          300
+        ),
         guidanceText:
           'Bring all your attention to your breath. Count each exhale. One... two... three... up to ten, then start again. When your mind wanders—and it will—notice without judgment and return to one. This is training. Every time you return, you\'re strengthening your focus muscle.',
       },
@@ -96,6 +169,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-df-body2',
         type: 'body',
         durationSeconds: 390,
+        segments: createSegmentsFromText(
+          'section-df-body2',
+          'Now, bring to mind the work ahead. See yourself approaching it with clarity and purpose. Notice any resistance. Breathe into it. You have what you need. Your mind is sharp. Your attention is yours to direct. Stay with this vision. Feel the readiness building.',
+          390
+        ),
         guidanceText:
           'Now, bring to mind the work ahead. See yourself approaching it with clarity and purpose. Notice any resistance. Breathe into it. You have what you need. Your mind is sharp. Your attention is yours to direct. Stay with this vision. Feel the readiness building.',
       },
@@ -103,6 +181,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-df-closing',
         type: 'closing',
         durationSeconds: 120,
+        segments: createSegmentsFromText(
+          'section-df-closing',
+          'Strong work. You\'ve trained your mind. Take a deep breath in. Let it out. Remember this clarity. You can return to it anytime. Open your eyes and bring this focus to your work.',
+          120
+        ),
         guidanceText:
           'Strong work. You\'ve trained your mind. Take a deep breath in. Let it out. Remember this clarity. You can return to it anytime. Open your eyes and bring this focus to your work.',
       },
@@ -139,6 +222,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-er-intro',
         type: 'intro',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-er-intro',
+          'Welcome to this evening ritual. You can lie down or sit comfortably. Let your body be heavy, supported. Close your eyes gently. This is your time to release the day.',
+          60
+        ),
         guidanceText:
           'Welcome to this evening ritual. You can lie down or sit comfortably. Let your body be heavy, supported. Close your eyes gently. This is your time to release the day.',
       },
@@ -146,6 +234,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-er-body',
         type: 'body',
         durationSeconds: 420,
+        segments: createSegmentsFromText(
+          'section-er-body',
+          'Scan through your body from your head down to your toes. Notice any tension. With each exhale, imagine releasing it. Let your jaw soften. Your shoulders drop. Your hands relax. There\'s nothing left to hold onto. The day is complete. You did what you could. Let it all soften and release.',
+          420
+        ),
         guidanceText:
           'Scan through your body from your head down to your toes. Notice any tension. With each exhale, imagine releasing it. Let your jaw soften. Your shoulders drop. Your hands relax. There\'s nothing left to hold onto. The day is complete. You did what you could. Let it all soften and release.',
       },
@@ -153,6 +246,7 @@ export const mockRituals: Ritual[] = [
         id: 'section-er-silence',
         type: 'silence',
         durationSeconds: 180,
+        segments: createSegmentsFromText('section-er-silence', '', 180),
         guidanceText: '',
         silenceDuration: 180,
       },
@@ -160,6 +254,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-er-closing',
         type: 'closing',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-er-closing',
+          'As we close, know that rest is coming. You are safe. You are held. When you\'re ready, open your eyes softly, and let yourself drift toward sleep.',
+          60
+        ),
         guidanceText:
           'As we close, know that rest is coming. You are safe. You are held. When you\'re ready, open your eyes softly, and let yourself drift toward sleep.',
       },
@@ -196,6 +295,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-gh-intro',
         type: 'intro',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-gh-intro',
+          'Find a comfortable position. Close your eyes or soften your gaze. In this practice, we\'ll explore gratitude—not as a forced feeling, but as a gentle noticing of what\'s present.',
+          60
+        ),
         guidanceText:
           'Find a comfortable position. Close your eyes or soften your gaze. In this practice, we\'ll explore gratitude—not as a forced feeling, but as a gentle noticing of what\'s present.',
       },
@@ -203,6 +307,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-gh-body',
         type: 'body',
         durationSeconds: 360,
+        segments: createSegmentsFromText(
+          'section-gh-body',
+          'Bring to mind something simple you\'re grateful for today. It might be a person, a moment, a breath of fresh air. Hold it lightly in your awareness. Notice how it feels in your body to recall this. Let yourself appreciate it. Now, gently bring to mind something else. And another. Let gratitude arise naturally, without forcing. Each acknowledgment is a gift you give yourself.',
+          360
+        ),
         guidanceText:
           'Bring to mind something simple you\'re grateful for today. It might be a person, a moment, a breath of fresh air. Hold it lightly in your awareness. Notice how it feels in your body to recall this. Let yourself appreciate it. Now, gently bring to mind something else. And another. Let gratitude arise naturally, without forcing. Each acknowledgment is a gift you give yourself.',
       },
@@ -210,6 +319,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-gh-closing',
         type: 'closing',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-gh-closing',
+          'As we close, notice if your perspective has shifted, even slightly. Gratitude is always available. Deepen your breath. When ready, open your eyes.',
+          60
+        ),
         guidanceText:
           'As we close, notice if your perspective has shifted, even slightly. Gratitude is always available. Deepen your breath. When ready, open your eyes.',
       },
@@ -246,6 +360,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-is-intro',
         type: 'intro',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-is-intro',
+          'Sit tall. Feel your feet grounded. You\'re here to connect with your inner strength—it\'s already there. Close your eyes and let\'s access it.',
+          60
+        ),
         guidanceText:
           'Sit tall. Feel your feet grounded. You\'re here to connect with your inner strength—it\'s already there. Close your eyes and let\'s access it.',
       },
@@ -253,6 +372,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-is-body',
         type: 'body',
         durationSeconds: 480,
+        segments: createSegmentsFromText(
+          'section-is-body',
+          'Recall a time you faced something difficult and came through it. See that version of yourself. Notice the strength there. That strength is still in you. It\'s here right now. Breathe into your chest, your core. Feel the solidity. You\'ve done hard things before. You can do them again. Bring to mind the challenge ahead. See yourself meeting it with this strength. Not perfectly—but with courage. Stay with this. You are capable.',
+          480
+        ),
         guidanceText:
           'Recall a time you faced something difficult and came through it. See that version of yourself. Notice the strength there. That strength is still in you. It\'s here right now. Breathe into your chest, your core. Feel the solidity. You\'ve done hard things before. You can do them again. Bring to mind the challenge ahead. See yourself meeting it with this strength. Not perfectly—but with courage. Stay with this. You are capable.',
       },
@@ -260,6 +384,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-is-closing',
         type: 'closing',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-is-closing',
+          'You\'ve connected with your strength. It\'s not something you create—it\'s something you remember. Take a full breath. Let it out. Open your eyes. You\'re ready.',
+          60
+        ),
         guidanceText:
           'You\'ve connected with your strength. It\'s not something you create—it\'s something you remember. Take a full breath. Let it out. Open your eyes. You\'re ready.',
       },
@@ -296,6 +425,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-mr-intro',
         type: 'intro',
         durationSeconds: 30,
+        segments: createSegmentsFromText(
+          'section-mr-intro',
+          'Pause everything. Close your eyes. This is a reset—five minutes to let go and return fresh.',
+          30
+        ),
         guidanceText:
           'Pause everything. Close your eyes. This is a reset—five minutes to let go and return fresh.',
       },
@@ -303,6 +437,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-mr-body',
         type: 'body',
         durationSeconds: 150,
+        segments: createSegmentsFromText(
+          'section-mr-body',
+          'Notice your breath. Follow it in. Follow it out. Let the morning fade. Let the afternoon wait. Just this breath. This moment. Nothing else needs your attention right now.',
+          150
+        ),
         guidanceText:
           'Notice your breath. Follow it in. Follow it out. Let the morning fade. Let the afternoon wait. Just this breath. This moment. Nothing else needs your attention right now.',
       },
@@ -310,6 +449,7 @@ export const mockRituals: Ritual[] = [
         id: 'section-mr-silence',
         type: 'silence',
         durationSeconds: 90,
+        segments: createSegmentsFromText('section-mr-silence', '', 90),
         guidanceText: '',
         silenceDuration: 90,
       },
@@ -317,6 +457,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-mr-closing',
         type: 'closing',
         durationSeconds: 30,
+        segments: createSegmentsFromText(
+          'section-mr-closing',
+          'You\'re reset. Take a breath. Open your eyes. Continue your day with fresh energy.',
+          30
+        ),
         guidanceText:
           'You\'re reset. Take a breath. Open your eyes. Continue your day with fresh energy.',
       },
@@ -353,6 +498,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-ba-intro',
         type: 'intro',
         durationSeconds: 90,
+        segments: createSegmentsFromText(
+          'section-ba-intro',
+          'Lie down or sit comfortably. Let your body be fully supported. Close your eyes. For the next twenty minutes, you\'ll journey through your body with gentle attention.',
+          90
+        ),
         guidanceText:
           'Lie down or sit comfortably. Let your body be fully supported. Close your eyes. For the next twenty minutes, you\'ll journey through your body with gentle attention.',
       },
@@ -360,6 +510,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-ba-body',
         type: 'body',
         durationSeconds: 900,
+        segments: createSegmentsFromText(
+          'section-ba-body',
+          'Begin with your feet. Notice any sensations—warmth, coolness, tingling, or nothing at all. All of it is okay. Move your attention to your ankles, your calves, your knees. Slowly traveling up through your thighs, your hips. Notice your belly rising and falling with breath. Your chest, your shoulders. Down your arms to your fingertips. Your neck, your jaw, your face. Your whole head. Now feel your entire body at once. You are here. You are present. You are enough.',
+          900
+        ),
         guidanceText:
           'Begin with your feet. Notice any sensations—warmth, coolness, tingling, or nothing at all. All of it is okay. Move your attention to your ankles, your calves, your knees. Slowly traveling up through your thighs, your hips. Notice your belly rising and falling with breath. Your chest, your shoulders. Down your arms to your fingertips. Your neck, your jaw, your face. Your whole head. Now feel your entire body at once. You are here. You are present. You are enough.',
       },
@@ -367,6 +522,7 @@ export const mockRituals: Ritual[] = [
         id: 'section-ba-silence',
         type: 'silence',
         durationSeconds: 150,
+        segments: createSegmentsFromText('section-ba-silence', '', 150),
         guidanceText: '',
         silenceDuration: 150,
       },
@@ -374,6 +530,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-ba-closing',
         type: 'closing',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-ba-closing',
+          'Slowly begin to deepen your breath. Wiggle your fingers and toes. Roll to one side and pause. When you\'re ready, gently come up to sitting. Thank yourself for this practice.',
+          60
+        ),
         guidanceText:
           'Slowly begin to deepen your breath. Wiggle your fingers and toes. Roll to one side and pause. When you\'re ready, gently come up to sitting. Thank yourself for this practice.',
       },
@@ -410,6 +571,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-bf-intro',
         type: 'intro',
         durationSeconds: 45,
+        segments: createSegmentsFromText(
+          'section-bf-intro',
+          'Sit comfortably. Close your eyes. This is a simple practice—just you and your breath.',
+          45
+        ),
         guidanceText:
           'Sit comfortably. Close your eyes. This is a simple practice—just you and your breath.',
       },
@@ -417,6 +583,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-bf-body',
         type: 'body',
         durationSeconds: 315,
+        segments: createSegmentsFromText(
+          'section-bf-body',
+          'Find your breath. Notice where you feel it most clearly—nose, chest, or belly. Keep your attention there. When your mind wanders, return to the breath. This is the practice. Breath in. Breath out. Again and again. The simplicity is the point.',
+          315
+        ),
         guidanceText:
           'Find your breath. Notice where you feel it most clearly—nose, chest, or belly. Keep your attention there. When your mind wanders, return to the breath. This is the practice. Breath in. Breath out. Again and again. The simplicity is the point.',
       },
@@ -424,6 +595,11 @@ export const mockRituals: Ritual[] = [
         id: 'section-bf-closing',
         type: 'closing',
         durationSeconds: 60,
+        segments: createSegmentsFromText(
+          'section-bf-closing',
+          'You\'ve practiced the foundation of all meditation—returning to the breath. This skill builds over time. Open your eyes when ready.',
+          60
+        ),
         guidanceText:
           'You\'ve practiced the foundation of all meditation—returning to the breath. This skill builds over time. Open your eyes when ready.',
       },

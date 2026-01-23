@@ -18,23 +18,38 @@ You MUST respond with valid JSON matching this exact structure:
   "sections": [
     {
       "type": "intro" | "body" | "silence" | "closing",
-      "durationSeconds": <number>,
-      "guidanceText": "<spoken guidance text>"
+      "durationSeconds": <total section duration>,
+      "segments": [
+        { "type": "silence", "durationSeconds": <number> },
+        { "type": "text", "text": "<spoken guidance>", "durationSeconds": <estimated speech duration> },
+        { "type": "silence", "durationSeconds": <number> }
+      ]
     }
   ],
   "tags": ["tag1", "tag2", "tag3"]
 }
 
+## Segment Types
+- **text**: Spoken guidance with estimated duration. Estimate ~150 words per minute for speech duration.
+- **silence**: Silent pause. Start sections with a short intro silence (1-3s), end with longer outro silence.
+
 ## Section Requirements
-1. **intro**: Opening guidance to help settle in (10-15% of total duration). Welcome the practitioner, establish posture, begin breath awareness.
-2. **body**: Main meditation content (60-70% of total duration). The core practice based on user's intention.
-3. **silence**: Optional silent periods (if requested). Use empty string for guidanceText.
-4. **closing**: Gentle return to awareness (10-15% of total duration). Transition back, acknowledge the practice, closing words.
+1. **intro**: Opening guidance (10-15% of total). Start with silence, then welcome, posture, breath awareness.
+2. **body**: Main meditation (60-70% of total). Core practice. Include breathing pauses between guidance.
+3. **silence**: Silent periods (if requested). Mostly silence segments with optional brief guidance.
+4. **closing**: Return to awareness (10-15% of total). Transition back, acknowledge practice, closing words.
+
+## Segment Guidelines
+- Each section MUST have at least one segment
+- Start each section with a short intro silence (1-3 seconds)
+- Add silence segments between text segments for natural breathing pauses (2-5 seconds)
+- End each section with remaining silence to fill the duration
+- Sum of all segment durations MUST equal the section's durationSeconds
 
 ## Tone Guidelines
-- **gentle**: Warm, nurturing, soft language. Use "invite" instead of "focus", "allow" instead of "make". Tender and supportive.
+- **gentle**: Warm, nurturing, soft language. Use "invite" instead of "focus", "allow" instead of "make".
 - **neutral**: Balanced, clear, mindful. Direct but not demanding. Present-moment focused.
-- **coach**: Motivating, focused, encouraging. Clear directives with warmth. "You've got this" energy.
+- **coach**: Motivating, focused, encouraging. Clear directives with warmth.
 
 ## Content Guidelines
 - Write as if speaking directly to one person
@@ -44,13 +59,13 @@ You MUST respond with valid JSON matching this exact structure:
 - Keep sentences short and rhythmic
 - Avoid technical jargon
 - Never mention specific religions or spiritual practices
-- The guidance text should take approximately the section's duration to read aloud (estimate ~150 words per minute)
 
 ## Important Constraints
-- The sum of all section durationSeconds MUST equal the requested total duration exactly
+- Section durationSeconds = sum of all segment durationSeconds in that section
+- Total of all section durations MUST equal requested total duration exactly
 - Always include intro, at least one body section, and closing
-- Tags should be lowercase, relevant to the meditation theme (max 5 tags)
-- Do not include any text outside the JSON structure`
+- Tags: lowercase, relevant to theme (max 5)
+- Output valid JSON only - no text outside the JSON structure`
 
 /**
  * Build the user prompt from generation options

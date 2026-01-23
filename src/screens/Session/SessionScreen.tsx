@@ -9,6 +9,7 @@ import { useRituals } from '@/contexts'
 import { useSessionPlayer } from '@/hooks/useSessionPlayer'
 import { useReducedMotion } from '@/hooks'
 import { GuidanceText, SessionControls } from '@/components/session'
+import { getSectionGuidanceText } from '@/types'
 
 type TextSize = 'medium' | 'large' | 'extra-large'
 
@@ -165,7 +166,7 @@ export function SessionScreen() {
   // Get current guidance text
   const guidanceText = currentSection?.type === 'silence'
     ? ''
-    : currentSection?.guidanceText || ''
+    : currentSection ? getSectionGuidanceText(currentSection) : ''
 
   // Background animation class
   const bgTransition = prefersReducedMotion ? '' : 'transition-colors duration-1000'
