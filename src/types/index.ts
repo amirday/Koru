@@ -48,6 +48,7 @@ export type {
   TTSOptions,
   TTSResult,
   TTSProvider,
+  TTSProviderType,
 } from './voice'
 
 // Service interfaces

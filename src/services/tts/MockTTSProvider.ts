@@ -15,7 +15,7 @@ export class MockTTSProvider implements TTSProvider {
   private defaultVoiceId: string
 
   constructor() {
-    this.voices = voiceManifest.voices
+    this.voices = voiceManifest.voices as Voice[]
     this.defaultVoiceId = voiceManifest.defaultVoiceId
   }
 

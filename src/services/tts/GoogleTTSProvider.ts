@@ -17,6 +17,34 @@ interface WavConversionOptions {
 }
 
 /**
+ * Retry configuration
+ * Disabled retries to avoid making rate limiting worse
+ */
+const RETRY_CONFIG = {
+  maxRetries: 0,  // No retries - let the caller handle rate limiting
+  baseDelayMs: 1000,
+  maxDelayMs: 10000,
+}
+
+/**
+ * Check if error is a rate limit error
+ */
+function isRateLimitError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase()
+    return message.includes('429') || message.includes('rate limit') || message.includes('quota')
+  }
+  return false
+}
+
+/**
+ * Sleep for specified milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
  * GoogleTTSProvider - Real TTS using Google Gemini
  */
 export class GoogleTTSProvider implements TTSProvider {
@@ -24,18 +52,39 @@ export class GoogleTTSProvider implements TTSProvider {
   private model: string
   private voices: Voice[]
   private defaultVoiceId: string
+  private rateLimitedUntil: number = 0
 
   constructor(apiKey: string) {
     this.ai = new GoogleGenAI({ apiKey })
     this.model = 'gemini-2.5-pro-preview-tts'
-    this.voices = voiceManifest.voices
+    this.voices = voiceManifest.voices as Voice[]
     this.defaultVoiceId = voiceManifest.defaultVoiceId
   }
 
   /**
+   * Check if currently rate limited
+   */
+  isRateLimited(): boolean {
+    return Date.now() < this.rateLimitedUntil
+  }
+
+  /**
    * Synthesize text to speech using Google Gemini TTS
+   * Waits for rate limit cooldown if needed
    */
   async synthesize(options: TTSOptions): Promise<TTSResult> {
+    const requestId = Date.now()
+    console.log(`[GoogleTTS] Request ${requestId} STARTED - text: "${options.text.slice(0, 40)}..."`)
+
+    // If rate limited, wait for cooldown to clear
+    if (this.isRateLimited()) {
+      const waitTime = this.rateLimitedUntil - Date.now()
+      if (waitTime > 0) {
+        console.log(`[GoogleTTS] Request ${requestId} - Rate limited, waiting ${Math.ceil(waitTime / 1000)}s for cooldown...`)
+        await sleep(waitTime + 1000) // Add 1s buffer
+      }
+    }
+
     const voiceId = options.voiceId ?? this.defaultVoiceId
 
     // Build the prompt with meditation-style instructions
@@ -53,78 +102,109 @@ export class GoogleTTSProvider implements TTSProvider {
       },
     }
 
-    try {
-      const response = await this.ai.models.generateContentStream({
-        model: this.model,
-        config,
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }],
-          },
-        ],
-      })
+    let lastError: Error | null = null
 
-      // Collect all audio chunks
-      const audioChunks: Uint8Array[] = []
-      let mimeType = ''
-
-      for await (const chunk of response) {
-        if (!chunk.candidates?.[0]?.content?.parts) {
-          continue
+    for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+      try {
+        // Wait before retry (exponential backoff)
+        if (attempt > 0) {
+          const delayMs = Math.min(
+            RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt - 1),
+            RETRY_CONFIG.maxDelayMs
+          )
+          console.log(`[GoogleTTS] Retry attempt ${attempt}/${RETRY_CONFIG.maxRetries}, waiting ${delayMs}ms...`)
+          await sleep(delayMs)
         }
 
-        const part = chunk.candidates[0].content.parts[0]
-        if (part?.inlineData) {
-          const inlineData = part.inlineData
-          mimeType = inlineData.mimeType || ''
+        const response = await this.ai.models.generateContentStream({
+          model: this.model,
+          config,
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: prompt }],
+            },
+          ],
+        })
 
-          // Decode base64 to Uint8Array
-          const binaryString = atob(inlineData.data || '')
-          const bytes = new Uint8Array(binaryString.length)
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i)
+        // Collect all audio chunks
+        const audioChunks: Uint8Array[] = []
+        let mimeType = ''
+
+        for await (const chunk of response) {
+          if (!chunk.candidates?.[0]?.content?.parts) {
+            continue
           }
-          audioChunks.push(bytes)
+
+          const part = chunk.candidates[0].content.parts[0]
+          if (part?.inlineData) {
+            const inlineData = part.inlineData
+            mimeType = inlineData.mimeType || ''
+
+            // Decode base64 to Uint8Array
+            const binaryString = atob(inlineData.data || '')
+            const bytes = new Uint8Array(binaryString.length)
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i)
+            }
+            audioChunks.push(bytes)
+          }
+        }
+
+        // Combine all chunks
+        const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0)
+        const combinedData = new Uint8Array(totalLength)
+        let offset = 0
+        for (const chunk of audioChunks) {
+          combinedData.set(chunk, offset)
+          offset += chunk.length
+        }
+
+        // Convert to WAV if needed
+        let audioBlob: Blob
+        if (mimeType.startsWith('audio/L') || !mimeType.includes('wav')) {
+          // Raw PCM data - convert to WAV
+          const wavData = this.convertToWav(combinedData, mimeType)
+          // Create ArrayBuffer copy to avoid SharedArrayBuffer issues
+          const buffer = new ArrayBuffer(wavData.byteLength)
+          new Uint8Array(buffer).set(wavData)
+          audioBlob = new Blob([buffer], { type: 'audio/wav' })
+        } else {
+          // Create ArrayBuffer copy to avoid SharedArrayBuffer issues
+          const buffer = new ArrayBuffer(combinedData.byteLength)
+          new Uint8Array(buffer).set(combinedData)
+          audioBlob = new Blob([buffer], { type: mimeType || 'audio/wav' })
+        }
+
+        // Calculate duration
+        const durationSeconds = await this.getAudioDuration(audioBlob)
+
+        console.log(`[GoogleTTS] Request ${requestId} COMPLETED - duration: ${durationSeconds.toFixed(2)}s`)
+
+        return {
+          audioBlob,
+          durationSeconds,
+        }
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        console.error(`[GoogleTTS] Attempt ${attempt + 1} failed:`, lastError.message)
+
+        // If rate limited, set cooldown and don't retry
+        if (isRateLimitError(error)) {
+          // Set rate limit cooldown for 60 seconds
+          this.rateLimitedUntil = Date.now() + 60000
+          console.warn('[GoogleTTS] Rate limited, setting 60s cooldown')
+          throw new Error('RATE_LIMITED: Google TTS rate limit exceeded. Falling back to mock TTS.')
+        }
+
+        // For other errors, continue retrying
+        if (attempt === RETRY_CONFIG.maxRetries) {
+          break
         }
       }
-
-      // Combine all chunks
-      const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0)
-      const combinedData = new Uint8Array(totalLength)
-      let offset = 0
-      for (const chunk of audioChunks) {
-        combinedData.set(chunk, offset)
-        offset += chunk.length
-      }
-
-      // Convert to WAV if needed
-      let audioBlob: Blob
-      if (mimeType.startsWith('audio/L') || !mimeType.includes('wav')) {
-        // Raw PCM data - convert to WAV
-        const wavData = this.convertToWav(combinedData, mimeType)
-        // Create ArrayBuffer copy to avoid SharedArrayBuffer issues
-        const buffer = new ArrayBuffer(wavData.byteLength)
-        new Uint8Array(buffer).set(wavData)
-        audioBlob = new Blob([buffer], { type: 'audio/wav' })
-      } else {
-        // Create ArrayBuffer copy to avoid SharedArrayBuffer issues
-        const buffer = new ArrayBuffer(combinedData.byteLength)
-        new Uint8Array(buffer).set(combinedData)
-        audioBlob = new Blob([buffer], { type: mimeType || 'audio/wav' })
-      }
-
-      // Calculate duration
-      const durationSeconds = await this.getAudioDuration(audioBlob)
-
-      return {
-        audioBlob,
-        durationSeconds,
-      }
-    } catch (error) {
-      console.error('Google TTS synthesis error:', error)
-      throw new Error(`TTS synthesis failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
+
+    throw new Error(`TTS synthesis failed after ${RETRY_CONFIG.maxRetries + 1} attempts: ${lastError?.message || 'Unknown error'}`)
   }
 
   /**

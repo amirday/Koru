@@ -3,6 +3,7 @@
     {
       "id": "Aoede",
       "name": "Aoede",
+      "provider": "google",
       "description": "Warm, gentle female voice perfect for calming meditations",
       "labels": ["calm", "female", "warm", "meditative"],
       "previewUrl": "/voices/aoede-preview.mp3",
@@ -11,14 +12,22 @@
     {
       "id": "Charon",
       "name": "Charon",
+      "provider": "google",
       "description": "Deep, grounding male voice ideal for focused practices",
       "labels": ["deep", "male", "grounding", "focused"],
       "previewUrl": "/voices/charon-preview.mp3",
       "previewText": "Take a deep breath and let your shoulders relax."
+    },
+    {
+      "id": "EXAVITQu4vr4xnSDxMaL",
+      "name": "Sarah",
+      "provider": "elevenlabs",
+      "description": "Soft and calm American female voice",
+      "labels": ["calm", "female", "american", "soft"],
+      "previewUrl": "/voices/elevenlabs-sarah-preview.mp3",
+      "previewText": "Welcome to your meditation practice."
     }
   ],
   "defaultVoiceId": "Aoede",
-  "generatedAt": "2026-01-23T00:00:00Z",
-  "provider": "google-gemini",
-  "model": "gemini-2.5-pro-preview-tts"
+  "generatedAt": "2026-01-23T00:00:00Z"
 }

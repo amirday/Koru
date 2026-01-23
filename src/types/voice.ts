@@ -4,13 +4,20 @@
  */
 
 /**
+ * TTS provider types
+ */
+export type TTSProviderType = 'mock' | 'google' | 'elevenlabs'
+
+/**
  * Voice metadata for TTS provider
  */
 export interface Voice {
-  /** ElevenLabs voice_id (e.g., "21m00Tcm4TlvDq8ikWAM") */
+  /** Provider-specific voice ID */
   id: string
-  /** Display name (e.g., "Rachel") */
+  /** Display name (e.g., "Sarah") */
   name: string
+  /** Which TTS provider this voice belongs to */
+  provider: TTSProviderType
   /** Short description */
   description: string
   /** Tags like ['calm', 'female', 'american'] */

@@ -33,18 +33,28 @@ function formatDuration(seconds: number): string {
 /**
  * Format timestamp to relative date
  */
-function formatLastUsed(timestamp?: string): string {
-  if (!timestamp) return 'Never used'
+function formatRelativeDate(timestamp?: string, prefix?: string): string {
+  if (!timestamp) return prefix ? '' : 'Never used'
 
   const date = new Date(timestamp)
   const now = new Date()
   const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
 
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 7) return `${diffDays} days ago`
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
-  return date.toLocaleDateString()
+  let relative: string
+  if (diffDays === 0) relative = 'Today'
+  else if (diffDays === 1) relative = 'Yesterday'
+  else if (diffDays < 7) relative = `${diffDays} days ago`
+  else if (diffDays < 30) relative = `${Math.floor(diffDays / 7)} weeks ago`
+  else relative = date.toLocaleDateString()
+
+  return prefix ? `${prefix} ${relative}` : relative
+}
+
+/**
+ * Format creation timestamp
+ */
+function formatCreatedAt(timestamp?: string): string {
+  return formatRelativeDate(timestamp, 'Created')
 }
 
 /**
@@ -241,9 +251,16 @@ export function RitualCard({
 
           {/* Footer row */}
           <div className="flex items-center justify-between">
-            <span className="text-xs text-calm-500">
-              {formatLastUsed(ritual.statistics?.lastUsedAt)}
-            </span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs text-calm-500">
+                {formatCreatedAt(ritual.createdAt)}
+              </span>
+              {ritual.statistics?.lastUsedAt && (
+                <span className="text-xs text-calm-400">
+                  Last used {formatRelativeDate(ritual.statistics.lastUsedAt)}
+                </span>
+              )}
+            </div>
 
             <Button
               variant="primary"

@@ -41,7 +41,14 @@ Not allowed (until we switch phases):
 - Always implement screens with realistic mocked content.
 - Prefer reusable components over repeated markup.
 - Keep changes reviewable: one flow/screen at a time.
-- No backend “stubs” unless needed to drive UI state.
+- No backend "stubs" unless needed to drive UI state.
+- **No mock fallbacks for real APIs**: Never silently fall back to mock implementations when a real API (TTS, AI, etc.) fails or is rate limited. Instead:
+  - Wait for rate limits to clear (with user feedback)
+  - Show clear error messages to the user
+  - Let the user decide how to proceed
+- **Documentation sync**: When adding or modifying components, services, hooks, types, or architecture, always update the relevant documentation:
+  - `docs/sys_arch/UI_design.md` - for UI components, screens, and user flows
+  - `docs/sys_arch/ARCHITECTURE.md` - for services, hooks, types, and system design
 
 ## Definition of Done (UI phase)
 A task is done only if:
@@ -50,3 +57,4 @@ A task is done only if:
 - Empty/loading/error states exist.
 - Styling matches the design system and stays consistent across screens.
 - All test passed and plan (if availble) completion and test status is updated. your job is to update the atuomated tests, and I will update the manuale tests. rename once done rename the file to `<#setep>_done_<name>.md`
+- **Documentation updated**: `UI_design.md` and/or `ARCHITECTURE.md` reflect any new or changed components, services, or flows.

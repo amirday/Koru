@@ -41,6 +41,7 @@ export function RitualEditorScreen() {
   const [silence, setSilence] = useState<'off' | 'light' | 'heavy'>('light')
   const [soundscape, setSoundscape] = useState<Soundscape>('none')
   const [soundscapeVolume, setSoundscapeVolume] = useState(50)
+  const [voiceId, setVoiceId] = useState<string | undefined>(undefined)
   const [disabledSections, setDisabledSections] = useState<Set<string>>(new Set())
 
   // Original ritual for comparison
@@ -59,6 +60,7 @@ export function RitualEditorScreen() {
         setPace(ritual.pace)
         setSoundscape(ritual.soundscape || 'none')
         setSilence(ritual.includeSilence ? 'light' : 'off')
+        setVoiceId(ritual.voiceId)
       } else {
         toast.showToast('error', 'Ritual not found')
         navigate('/rituals')
@@ -111,10 +113,11 @@ export function RitualEditorScreen() {
       tone !== originalRitual.tone ||
       pace !== originalRitual.pace ||
       soundscape !== (originalRitual.soundscape || 'none') ||
+      voiceId !== originalRitual.voiceId ||
       JSON.stringify(sections) !== JSON.stringify(originalRitual.sections)
 
     setHasChanges(changed)
-  }, [title, instructions, sections, tone, pace, soundscape, originalRitual, id])
+  }, [title, instructions, sections, tone, pace, soundscape, voiceId, originalRitual, id])
 
   // Computed ritual for saving/display
   const currentRitual = useMemo((): Ritual | null => {
@@ -131,6 +134,7 @@ export function RitualEditorScreen() {
       pace,
       includeSilence: silence !== 'off',
       soundscape: soundscape === 'none' ? undefined : soundscape,
+      voiceId,
       sections,
       tags: originalRitual?.tags || [],
       isTemplate: originalRitual?.isTemplate || false,
@@ -139,7 +143,7 @@ export function RitualEditorScreen() {
       updatedAt: new Date().toISOString() as Timestamp,
       statistics: originalRitual?.statistics || null,
     }
-  }, [id, title, instructions, sections, tone, pace, silence, soundscape, originalRitual])
+  }, [id, title, instructions, sections, tone, pace, silence, soundscape, voiceId, originalRitual])
 
   // Handlers
   const handleBack = () => {
@@ -304,11 +308,13 @@ export function RitualEditorScreen() {
 
           {activeTab === 'voice' && (
             <VoicePacingTab
+              voiceId={voiceId}
               tone={tone}
               pace={pace}
               silence={silence}
               soundscape={soundscape}
               soundscapeVolume={soundscapeVolume}
+              onVoiceChange={setVoiceId}
               onToneChange={setTone}
               onPaceChange={setPace}
               onSilenceChange={setSilence}

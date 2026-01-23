@@ -43,6 +43,8 @@ interface RitualContextActions {
   saveRitual: (ritual: Ritual) => Promise<void>
   /** Delete ritual from library */
   deleteRitual: (id: string) => Promise<void>
+  /** Delete all rituals from library */
+  deleteAllRituals: () => Promise<void>
   /** Duplicate ritual */
   duplicateRitual: (id: string) => Promise<Ritual>
   /** Set ritual for editing */
@@ -243,6 +245,20 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
   }, [rituals, persistRituals])
 
   /**
+   * Delete all rituals from library
+   */
+  const deleteAllRituals = useCallback(async () => {
+    try {
+      setRituals([])
+      await persistRituals([])
+      console.log('[RitualContext] All rituals deleted')
+    } catch (error) {
+      console.error('[RitualContext] Failed to delete all rituals:', error)
+      throw error
+    }
+  }, [persistRituals])
+
+  /**
    * Duplicate ritual
    */
   const duplicateRitual = useCallback(async (id: string): Promise<Ritual> => {
@@ -317,6 +333,7 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
     answerClarifyingQuestion,
     saveRitual,
     deleteRitual,
+    deleteAllRituals,
     duplicateRitual,
     setEditingRitual,
     getRitual,

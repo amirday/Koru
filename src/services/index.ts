@@ -24,7 +24,7 @@ export type {
 
 // TTS
 export { TTSService, MockTTSProvider, getTTSService, resetTTSService } from './tts'
-export type { TTSProviderType, TTSServiceConfig } from './tts'
+export type { TTSServiceConfig } from './tts'
 
 // Audio
 export { AudioStitcher, audioStitcher, AudioCache, audioCache } from './audio'

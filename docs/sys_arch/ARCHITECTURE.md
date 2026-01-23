@@ -807,7 +807,26 @@ interface NotificationOptions {
 }
 ```
 
-### 7.6 TTS Service (Planned)
+### 7.6 TTS Service
+
+**Architecture**: Provider abstraction with TTSService facade
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    TTSService                            │
+│          (Provider selection & management)               │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │
+│  │  MockTTS    │  │  GoogleTTS  │  │  ElevenLabsTTS  │  │
+│  │  Provider   │  │  Provider   │  │    Provider     │  │
+│  ├─────────────┤  ├─────────────┤  ├─────────────────┤  │
+│  │ Silent audio│  │ Gemini 2.5  │  │ ElevenLabs API  │  │
+│  │ for testing │  │ Pro TTS     │  │                 │  │
+│  └─────────────┘  └─────────────┘  └─────────────────┘  │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
 
 **Interface**: `TTSProvider`
 
@@ -842,15 +861,48 @@ interface Voice {
 
 > **Why durationSeconds in TTSResult?** We need the actual TTS audio length to calculate how much silence to add: `silence_needed = target_section_duration - tts_duration`. Without measuring TTS output, we can't hit the target duration.
 
-**Current Implementation**: `MockTTSProvider`
-- Returns generated silence or bundled sample audio
-- Mock voice list from `/src/data/voices.json`
-- Simulates TTS generation with fake delays
+**TTSService Configuration**:
 
-**Future**: `ElevenLabsProvider`
-- ElevenLabs API integration
-- Real voice synthesis
-- Client-side for dev, backend proxy for production
+```typescript
+type TTSProviderType = 'mock' | 'google' | 'elevenlabs'
+
+interface TTSServiceConfig {
+  provider: TTSProviderType
+  googleApiKey?: string       // Required for 'google' provider
+  elevenLabsApiKey?: string   // Required for 'elevenlabs' provider
+  defaultVoiceId?: string     // Optional voice override
+}
+```
+
+**Environment Variables**:
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_GEMINI_API_KEY` | Google Gemini API key (for voices with `provider: "google"`) |
+| `VITE_ELEVENLABS_API_KEY` | ElevenLabs API key (for voices with `provider: "elevenlabs"`) |
+
+Note: Provider selection is automatic based on the `provider` field in each voice's manifest entry. Configure API keys only for the providers whose voices you want to use.
+
+**Provider Implementations**:
+
+1. **MockTTSProvider** (`mock`)
+   - Returns silent audio for testing
+   - No API calls required
+   - Voice list from local manifest
+
+2. **GoogleTTSProvider** (`google`)
+   - Uses Gemini 2.5 Pro Preview TTS model
+   - Supports meditation-style voice instructions
+   - Rate limit handling with 60s cooldown wait
+   - Voice manifest from `/src/data/voices.json`
+
+3. **ElevenLabsTTSProvider** (`elevenlabs`)
+   - ElevenLabs API integration
+   - Meditation-optimized voices (Sarah, Daniel, Charlotte, Lily, Liam)
+   - Rate limit handling with 60s cooldown wait
+   - Voice settings: stability 0.75, style 0.5
+
+**Important**: Never use mock fallbacks for real API providers. If rate limited, wait for cooldown and show clear errors to the user.
 
 ### 7.7 Audio Stitching Service (Planned)
 
