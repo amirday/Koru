@@ -422,9 +422,113 @@ A **structured editor**, not a free document.
 
 ---
 
+### 8.5 Segment Editor (Structure Tab Enhancement)
+
+Each section contains an ordered list of **segments** (text or silence). The Structure Tab displays these segments in a visual timeline.
+
+**Segment Timeline**
+- Visual bar showing: `[silence | text | silence | text | silence]`
+- Color coded: text segments = `peach-100`, silence segments = `calm-100`
+- Duration labels displayed under each segment
+- Total section duration shown at timeline end
+
+**Segment Types**
+- **Text Segment**: Contains guidance text to be spoken by TTS
+  - Editable text content
+  - Estimated duration (actual determined by TTS)
+- **Silence Segment**: A pause in the meditation
+  - Duration slider (1-60 seconds)
+  - Purpose selector: "Breathing space" / "Integration pause" / "Transition"
+
+**Segment Actions**
+- Tap segment → expand to edit text or duration
+- Drag handles → adjust segment duration visually
+- `+` button between segments → add new segment (text or silence)
+- Long-press segment → delete with confirmation
+
+**Auto-balance Behavior**
+- When section total duration changes, silence segments auto-adjust proportionally
+- Text segment durations are estimates (actual determined by TTS after generation)
+- Warning shown if text content likely exceeds available time
+
+**Visual Design**
+- Timeline uses horizontal scroll on mobile for long sections
+- Active segment highlighted with peach border
+- Collapsed view shows segment count: "5 segments • 2 min"
+
+---
+
+### 8.6 Voice Settings
+
+Accessible from:
+- Ritual Editor → "Voice & Pacing" tab → "Change voice" button
+- Profile → Settings → "Voice Settings"
+
+**Voice Picker**
+- Grid of voice cards (2 columns on mobile, 3 on tablet+)
+- Each card shows:
+  - Voice avatar/icon (visual representation)
+  - Voice name (e.g., "Rachel", "James")
+  - Labels/tags (e.g., "Calm", "Female", "American")
+  - Preview button (plays 5-second sample)
+  - Select button (checkmark when selected)
+- Selected voice highlighted with peach border
+- Default voice used if none selected
+
+**Preview Samples**
+- Pre-generated audio files bundled with app
+- Consistent preview phrase: "Take a deep breath and let your shoulders relax."
+- No API call needed for preview (offline-capable)
+- Small play button with circular progress indicator
+
+**Voice Card Layout**
+```
+┌─────────────────────────┐
+│     [Avatar Icon]       │
+│       "Rachel"          │
+│  Calm • Female • US     │
+│                         │
+│   [▶ Preview]  [Select] │
+└─────────────────────────┘
+```
+
+**Selected Voice Persistence**
+- Choice saved to user preferences
+- Applied to all new rituals by default
+- Can override per-ritual in editor
+
+---
+
 ## 9. Screen 3 – Session Screen (Sacred Mode)
 
 **Fullscreen, minimal UI – Keep this sacred**
+
+### Session Preparation (Pre-Session Audio Generation)
+
+Before the session begins, if audio hasn't been generated:
+
+**Preparation Screen**
+- Calm background (same as session)
+- Centered message: "Preparing your session..."
+- Subtle breathing animation or pulse indicator
+- Progress showing which section is being prepared:
+  - "Generating intro..." → "Generating body..." → "Generating closing..."
+- Estimated time remaining (optional, can be hidden for calmer experience)
+
+**User Options During Preparation**
+- "Cancel" → return to ritual preview
+- "Start without audio" → text-only session mode (silent reading)
+
+**Caching Behavior**
+- Previously generated audio loads instantly
+- Progress only shown for first-time generation
+- Background generation option: user can browse while audio generates
+
+**Edge Cases**
+- Network error → offer retry or text-only mode
+- Generation taking too long (>30s) → show "This is taking longer than expected" with options
+
+---
 
 ### Design Philosophy
 - **Distraction-free**: No navigation, no unnecessary UI
@@ -594,11 +698,34 @@ Examples:
   - Add/update reflection independently
   - Privacy: share sessions without reflections
 
-**RitualSection**
-- id, type (intro/body/silence/transition/closing), durationSeconds, guidanceText, silenceDuration, soundscape
+**Segment** (NEW - Core building block)
+- id, type ('text' | 'silence')
+- text (for text segments - the guidance content)
+- durationSeconds (target duration for this segment)
+- audioBlob (populated after TTS generation)
+- actualDurationSeconds (measured audio duration after TTS)
 
-**UserPreferences**
-- defaultDuration, defaultTone, notifications, soundscapesEnabled, voice, theme
+**RitualSection** (UPDATED - Now contains segments)
+- id, type (intro/body/closing)
+- durationSeconds (total target duration for section)
+- segments[] (ordered list of Segment - replaces guidanceText)
+- guidanceText (DEPRECATED: computed from segments for backwards compatibility)
+- audioUrl (cached combined audio URL)
+- audioDurationSeconds (actual combined audio duration)
+- audioGeneratedAt (cache invalidation timestamp)
+
+**Voice** (NEW)
+- id (provider voice_id, e.g., ElevenLabs voice ID)
+- name (display name, e.g., "Rachel")
+- description (short description)
+- labels[] (tags like ['calm', 'female', 'american'])
+- previewUrl (local path to bundled sample audio)
+- previewText (what the preview audio says)
+
+**UserPreferences** (UPDATED)
+- defaultDuration, defaultTone, notifications, soundscapesEnabled, theme
+- selectedVoiceId (currently selected TTS voice ID)
+- Future: per-tone voice selection (gentleVoiceId, neutralVoiceId, coachVoiceId)
 
 **Insight** (future)
 - Derived from Session and Reflection data for dashboard
