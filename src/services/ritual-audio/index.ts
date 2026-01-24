@@ -1,11 +1,9 @@
 /**
- * Ritual Audio Service exports
+ * Ritual Audio Types
  */
 
-export {
-  RitualAudioGenerator,
-  ritualAudioGenerator,
-  type GenerationProgress,
-  type SectionAudio,
-  type RitualAudioResult,
-} from './RitualAudioGenerator'
+export type {
+  GenerationProgress,
+  SectionAudio,
+  RitualAudioResult,
+} from './types'

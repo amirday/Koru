@@ -511,13 +511,6 @@ export function useSessionPlayer(ritual: Ritual | null): UseSessionPlayerReturn 
     setSectionElapsed(0)
   }, [ritual, currentSectionIndex, sectionElapsed])
 
-  // Cleanup section audio URLs on unmount
-  useEffect(() => {
-    return () => {
-      // Cleanup is handled by the sequencer's dispose method
-    }
-  }, [])
-
   return {
     state,
     currentSectionIndex,

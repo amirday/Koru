@@ -41,8 +41,7 @@ export {
   formatDuration,
 } from './audio'
 
-// Ritual Audio
-export { RitualAudioGenerator, ritualAudioGenerator } from './ritual-audio'
+// Ritual Audio Types
 export type {
   GenerationProgress,
   SectionAudio,

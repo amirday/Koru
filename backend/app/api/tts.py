@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 
 from ..logging_config import get_logger
 from ..models.tts import TTSRequest, TTSResponse, Voice
-from ..models.ritual import RitualResponse
 from ..services.tts_service import get_tts_service
 from ..services.storage import get_storage_service
 
