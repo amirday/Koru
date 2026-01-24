@@ -6,10 +6,8 @@
  */
 
 interface ImportMetaEnv {
-  /** OpenAI API key for ritual generation */
-  readonly VITE_OPENAI_API_KEY: string
-  /** Set to 'true' to use OpenAI provider, otherwise uses mock */
-  readonly VITE_USE_OPENAI: string
+  /** Backend API URL (Python FastAPI server) */
+  readonly VITE_BACKEND_URL: string
 }
 
 interface ImportMeta {

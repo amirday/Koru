@@ -3,11 +3,14 @@
  * Import from '@/services' to access service instances
  */
 
-// Storage
+// Backend API (primary interface for all backend operations)
+export * from './api'
+
+// Storage (deprecated - use backend API instead)
 export { storageService } from './storage/storage-service'
 export { LocalStorageAdapter } from './storage/LocalStorageAdapter'
 
-// AI
+// AI (deprecated - use backend API instead)
 export { aiService } from './ai/ai-service'
 export { MockAIProvider } from './ai/MockAIProvider'
 

@@ -1,13 +1,11 @@
 /**
- * TTS Service - Voice-based provider routing
- * Routes TTS requests to the correct provider based on voice selection
- * Supports: mock, google (Gemini), elevenlabs
+ * TTS Service - Routes TTS requests through the backend API
+ * All TTS synthesis happens on the backend to keep API keys secure
  */
 
 import type { TTSProvider, TTSOptions, TTSResult, Voice, TTSProviderType } from '@/types'
+import { synthesizeSpeech, getVoices as fetchVoices, getAudioUrl } from '@/services/api'
 import { MockTTSProvider } from './MockTTSProvider'
-import { GoogleTTSProvider } from './GoogleTTSProvider'
-import { ElevenLabsTTSProvider } from './ElevenLabsTTSProvider'
 import voiceManifest from '@/data/voices.json'
 
 // Re-export TTSProviderType for backward compatibility
@@ -17,10 +15,8 @@ export type { TTSProviderType } from '@/types'
  * TTS Service configuration
  */
 export interface TTSServiceConfig {
-  /** API key for Google TTS (Gemini) */
-  googleApiKey?: string
-  /** API key for ElevenLabs */
-  elevenLabsApiKey?: string
+  /** Use mock provider instead of backend (for testing) */
+  useMock?: boolean
   /** Default voice ID */
   defaultVoiceId?: string
 }
@@ -33,86 +29,73 @@ interface TTSProviderWithDefault extends TTSProvider {
 }
 
 /**
- * TTS Service - Routes to correct provider based on voice selection
- * The application interacts only with this service, not providers directly
+ * TTS Service - Routes to backend API for real TTS
+ * Falls back to mock provider if backend is unavailable
  */
 export class TTSService implements TTSProvider {
   private mockProvider: TTSProviderWithDefault
-  private googleProvider: TTSProviderWithDefault | null = null
-  private elevenLabsProvider: TTSProviderWithDefault | null = null
   private voices: Voice[]
   private defaultVoiceId: string
+  private useMock: boolean
 
   constructor(config: TTSServiceConfig = {}) {
-    // Always have mock provider available
     this.mockProvider = new MockTTSProvider()
+    this.useMock = config.useMock ?? false
 
-    // Initialize Google provider if API key available
-    if (config.googleApiKey) {
-      this.googleProvider = new GoogleTTSProvider(config.googleApiKey)
-    }
-
-    // Initialize ElevenLabs provider if API key available
-    if (config.elevenLabsApiKey) {
-      this.elevenLabsProvider = new ElevenLabsTTSProvider(config.elevenLabsApiKey)
-    }
-
-    // Load voices from manifest
+    // Load voices from manifest (used for voice metadata/previews)
     this.voices = voiceManifest.voices as Voice[]
     this.defaultVoiceId = config.defaultVoiceId ?? voiceManifest.defaultVoiceId
   }
 
   /**
-   * Get the provider for a specific voice
-   */
-  private getProviderForVoice(voiceId: string): TTSProviderWithDefault {
-    const voice = this.voices.find(v => v.id === voiceId)
-
-    if (!voice) {
-      console.warn(`[TTSService] Voice ${voiceId} not found, using mock provider`)
-      return this.mockProvider
-    }
-
-    switch (voice.provider) {
-      case 'google':
-        if (!this.googleProvider) {
-          throw new Error(
-            `Google TTS provider not configured. Set VITE_GEMINI_API_KEY in .env to use voice "${voice.name}"`
-          )
-        }
-        return this.googleProvider
-
-      case 'elevenlabs':
-        if (!this.elevenLabsProvider) {
-          throw new Error(
-            `ElevenLabs TTS provider not configured. Set VITE_ELEVENLABS_API_KEY in .env to use voice "${voice.name}"`
-          )
-        }
-        return this.elevenLabsProvider
-
-      case 'mock':
-      default:
-        return this.mockProvider
-    }
-  }
-
-  /**
-   * Synthesize text to speech using the provider for the selected voice
+   * Synthesize text to speech via backend API
    */
   async synthesize(options: TTSOptions): Promise<TTSResult> {
     const voiceId = options.voiceId ?? this.defaultVoiceId
-    const provider = this.getProviderForVoice(voiceId)
 
-    console.log(`[TTSService] Synthesizing with voice ${voiceId}`)
+    // Use mock for testing
+    if (this.useMock) {
+      return this.mockProvider.synthesize({ ...options, voiceId })
+    }
 
-    return provider.synthesize({
-      ...options,
-      voiceId,
-    })
+    // Get voice info to determine provider
+    const voice = this.voices.find(v => v.id === voiceId)
+    const provider = voice?.provider === 'mock' ? undefined : voice?.provider
+
+    // If voice is mock type, use mock provider
+    if (voice?.provider === 'mock') {
+      return this.mockProvider.synthesize({ ...options, voiceId })
+    }
+
+    console.log(`[TTSService] Synthesizing via backend with voice ${voiceId}`)
+
+    try {
+      // Call backend API
+      const response = await synthesizeSpeech({
+        text: options.text,
+        voiceId,
+        provider: provider as 'elevenlabs' | 'google' | undefined,
+        speed: options.speed,
+      })
+
+      // Fetch the audio from the backend
+      const audioUrl = getAudioUrl(response.audioUrl)
+      const audioResponse = await fetch(audioUrl)
+      const audioBlob = await audioResponse.blob()
+
+      return {
+        audioBlob,
+        durationSeconds: response.durationSeconds,
+      }
+    } catch (error) {
+      console.error('[TTSService] Backend synthesis failed:', error)
+      throw error
+    }
   }
 
   /**
    * Get all available voices from the manifest
+   * (Voice metadata is loaded from local manifest, not backend)
    */
   async getVoices(): Promise<Voice[]> {
     return [...this.voices]
@@ -130,10 +113,18 @@ export class TTSService implements TTSProvider {
   }
 
   /**
-   * Check if at least one real provider is available
+   * Check if backend TTS is available
    */
   async isAvailable(): Promise<boolean> {
-    return this.googleProvider !== null || this.elevenLabsProvider !== null
+    if (this.useMock) return true
+
+    try {
+      // Try to fetch voices from backend to check availability
+      await fetchVoices()
+      return true
+    } catch {
+      return false
+    }
   }
 
   /**
@@ -159,36 +150,32 @@ export class TTSService implements TTSProvider {
   }
 
   /**
-   * Check if a voice's provider is configured
+   * Check if a voice is available (always true for backend-routed voices)
    */
   isVoiceAvailable(voiceId: string): boolean {
     const voice = this.voices.find(v => v.id === voiceId)
     if (!voice) return false
 
-    switch (voice.provider) {
-      case 'google':
-        return this.googleProvider !== null
-      case 'elevenlabs':
-        return this.elevenLabsProvider !== null
-      case 'mock':
-        return true
-      default:
-        return false
-    }
+    // Mock voices are always available
+    if (voice.provider === 'mock') return true
+
+    // Real voices depend on backend availability
+    // For now, assume they're available (backend has the keys)
+    return true
   }
 
   /**
-   * Get list of available voices (only those whose provider is configured)
+   * Get list of available voices
    */
   async getAvailableVoices(): Promise<Voice[]> {
     return this.voices.filter(v => this.isVoiceAvailable(v.id))
   }
 
   /**
-   * Check if at least one real TTS provider is configured (not mock)
+   * Check if real TTS is configured (always true when using backend)
    */
   isRealTTS(): boolean {
-    return this.googleProvider !== null || this.elevenLabsProvider !== null
+    return !this.useMock
   }
 }
 
@@ -197,18 +184,11 @@ let ttsServiceInstance: TTSService | null = null
 
 /**
  * Get the singleton TTS service instance
- * Reads configuration from environment variables
  */
 export function getTTSService(): TTSService {
   if (!ttsServiceInstance) {
-    ttsServiceInstance = new TTSService({
-      googleApiKey: import.meta.env.VITE_GEMINI_API_KEY as string | undefined,
-      elevenLabsApiKey: import.meta.env.VITE_ELEVENLABS_API_KEY as string | undefined,
-    })
-
-    const hasGoogle = import.meta.env.VITE_GEMINI_API_KEY ? 'yes' : 'no'
-    const hasElevenlabs = import.meta.env.VITE_ELEVENLABS_API_KEY ? 'yes' : 'no'
-    console.log(`[TTSService] Initialized - Google: ${hasGoogle}, ElevenLabs: ${hasElevenlabs}`)
+    ttsServiceInstance = new TTSService()
+    console.log('[TTSService] Initialized - using backend API for TTS')
   }
   return ttsServiceInstance
 }

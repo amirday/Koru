@@ -1,33 +1,25 @@
 /**
  * AI service singleton
- * Provides app-wide access to AI provider
  *
- * Provider selection:
- * - Set VITE_USE_OPENAI=true in .env to use OpenAI
- * - Set VITE_USE_OPENAI=false (or omit) to use mock provider
+ * NOTE: AI generation now goes through the Python backend.
+ * This service is kept for backward compatibility and mock provider support.
+ * Use generateRitual from '@/services/api' for direct backend calls.
  */
 
 import { MockAIProvider } from './MockAIProvider'
-import { OpenAIProvider } from './OpenAIProvider'
 import type { AIProvider } from '@/types'
 
 /**
- * Determine which AI provider to use based on environment
+ * Create AI provider
+ * Always uses mock since real AI is handled by backend
  */
 function createAIProvider(): AIProvider {
-  const useOpenAI = import.meta.env.VITE_USE_OPENAI === 'true'
-
-  if (useOpenAI) {
-    console.log('[AI Service] Using OpenAI provider')
-    return new OpenAIProvider()
-  }
-
-  console.log('[AI Service] Using Mock provider')
+  console.log('[AI Service] Using Mock provider (real AI goes through backend)')
   return new MockAIProvider()
 }
 
 /**
  * Global AI provider instance
- * Configured via VITE_USE_OPENAI environment variable
+ * @deprecated Use backend API directly via '@/services/api' for real AI generation
  */
 export const aiService: AIProvider = createAIProvider()

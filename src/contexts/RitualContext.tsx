@@ -1,13 +1,22 @@
 /**
  * RitualContext - Ritual management and generation
  * Manages ritual library, AI generation, and editing
+ *
+ * All data is persisted to the Python backend via API calls.
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import type { Ritual, AIGenerationOptions, AIGenerationProgress, AIClarifyingQuestion } from '@/types'
-import { Timestamp, STORAGE_KEYS } from '@/types'
-import { storageService, aiService, backgroundTaskService } from '@/services'
-import { mockRituals, quickStarts } from '@/mocks'
+import { Timestamp } from '@/types'
+import {
+  getRituals as fetchRituals,
+  createRitual as apiCreateRitual,
+  deleteRitual as apiDeleteRitual,
+  generateRitual as apiGenerateRitual,
+  isBackendAvailable,
+} from '@/services/api'
+import { backgroundTaskService } from '@/services'
+import { quickStarts } from '@/mocks'
 
 // ====================
 // Types
@@ -80,49 +89,44 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [generatedRitualId, setGeneratedRitualId] = useState<string | null>(null)
 
-  // Load initial state from storage
+  // Load initial state from backend
   useEffect(() => {
-    loadFromStorage()
+    loadFromBackend()
   }, [])
 
   /**
-   * Load rituals from localStorage
+   * Load rituals from backend API
    */
-  const loadFromStorage = async () => {
+  const loadFromBackend = async () => {
     try {
       setIsLoading(true)
 
-      // Load saved rituals
-      const savedRituals = await storageService.get<Ritual[]>(STORAGE_KEYS.RITUALS)
-      if (savedRituals && savedRituals.length > 0) {
-        setRituals(savedRituals)
-      } else {
-        // First time - load mock rituals as starting point
-        setRituals(mockRituals)
-        await storageService.set(STORAGE_KEYS.RITUALS, mockRituals)
+      // Check if backend is available
+      const backendUp = await isBackendAvailable()
+      if (!backendUp) {
+        console.warn('[RitualContext] Backend not available, starting with empty state')
+        setRituals([])
+        return
       }
+
+      // Load saved rituals from backend
+      const savedRituals = await fetchRituals()
+      setRituals(savedRituals)
+      console.log('[RitualContext] Loaded', savedRituals.length, 'rituals from backend')
     } catch (error) {
-      console.error('[RitualContext] Failed to load from storage:', error)
-      // Fallback to mock rituals
-      setRituals(mockRituals)
+      console.error('[RitualContext] Failed to load from backend:', error)
+      // Start with empty state on error
+      setRituals([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  /**
-   * Save rituals to localStorage
-   */
-  const persistRituals = useCallback(async (updatedRituals: Ritual[]) => {
-    try {
-      await storageService.set(STORAGE_KEYS.RITUALS, updatedRituals)
-    } catch (error) {
-      console.error('[RitualContext] Failed to persist rituals:', error)
-    }
-  }, [])
+  // Note: Individual CRUD operations now use backend API directly
+  // No bulk persist needed - backend handles persistence
 
   /**
-   * Start ritual generation
+   * Start ritual generation via backend API
    */
   const startGeneration = useCallback(async (options: AIGenerationOptions) => {
     try {
@@ -131,46 +135,35 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
       setClarifyingQuestion(null)
       setGeneratedRitualId(null)
 
-      // Check if AI wants to ask clarifying question first
-      const question = await aiService.askClarifyingQuestion({
-        instructions: options.instructions,
+      // Show progress stages for UX feedback
+      setGenerationProgress({
+        stage: 'structuring',
+        message: 'Analyzing your intention...',
+        progress: 10,
+      })
+
+      // Generate ritual via backend API (OpenAI call happens on backend)
+      const ritual = await apiGenerateRitual({
+        intention: options.instructions,
+        durationMinutes: Math.round(options.duration / 60),
         tone: options.tone,
+        includeSilence: options.includeSilence,
       })
 
-      if (question) {
-        setClarifyingQuestion(question)
-        setIsGenerating(false)
-        return
-      }
-
-      // Generate ritual directly (not in background task to capture result)
-      const ritual = await aiService.generateRitual(options, (progress) => {
-        setGenerationProgress(progress)
+      setGenerationProgress({
+        stage: 'complete',
+        message: 'Ritual created!',
+        progress: 100,
       })
 
-      // Save the generated ritual to the library
-      const now = Timestamp.now()
-      const savedRitual: Ritual = {
-        ...ritual,
-        createdAt: ritual.createdAt || now,
-        updatedAt: now,
-      }
-
-      // Add to rituals list using functional update (avoids stale closure)
-      setRituals(prevRituals => {
-        const updatedRituals = [...prevRituals, savedRitual]
-        // Persist to storage
-        storageService.set(STORAGE_KEYS.RITUALS, updatedRituals).catch(err => {
-          console.error('[RitualContext] Failed to persist:', err)
-        })
-        return updatedRituals
-      })
+      // Backend already saved the ritual, just update local state
+      setRituals(prevRituals => [...prevRituals, ritual])
 
       // Set the generated ritual ID for navigation
-      setGeneratedRitualId(savedRitual.id)
+      setGeneratedRitualId(ritual.id)
       setIsGenerating(false)
 
-      console.log('[RitualContext] Ritual generated and saved:', savedRitual.id, savedRitual.title)
+      console.log('[RitualContext] Ritual generated:', ritual.id, ritual.title)
     } catch (error) {
       console.error('[RitualContext] Generation failed:', error)
       setIsGenerating(false)
@@ -194,72 +187,81 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
   }, [clarifyingQuestion])
 
   /**
-   * Save ritual to library
+   * Save ritual to library via backend API
    */
   const saveRitual = useCallback(async (ritual: Ritual) => {
     try {
       const now = Timestamp.now()
 
-      // Check if ritual already exists
-      const existingIndex = rituals.findIndex((r) => r.id === ritual.id)
-
-      let updatedRituals: Ritual[]
-      if (existingIndex >= 0) {
-        // Update existing
-        const updatedRitual: Ritual = {
-          ...ritual,
-          updatedAt: now,
-        }
-        updatedRituals = [...rituals]
-        updatedRituals[existingIndex] = updatedRitual
-      } else {
-        // Add new
-        const newRitual: Ritual = {
-          ...ritual,
-          createdAt: ritual.createdAt || now,
-          updatedAt: now,
-        }
-        updatedRituals = [...rituals, newRitual]
+      // Prepare ritual with timestamps
+      const ritualToSave: Ritual = {
+        ...ritual,
+        createdAt: ritual.createdAt || now,
+        updatedAt: now,
       }
 
-      setRituals(updatedRituals)
-      await persistRituals(updatedRituals)
+      // Save to backend (creates or updates based on ID)
+      const savedRitual = await apiCreateRitual(ritualToSave)
+
+      // Update local state
+      setRituals(prevRituals => {
+        const existingIndex = prevRituals.findIndex((r) => r.id === savedRitual.id)
+        if (existingIndex >= 0) {
+          const updated = [...prevRituals]
+          updated[existingIndex] = savedRitual
+          return updated
+        }
+        return [...prevRituals, savedRitual]
+      })
+
+      console.log('[RitualContext] Ritual saved:', savedRitual.id)
     } catch (error) {
       console.error('[RitualContext] Failed to save ritual:', error)
       throw error
     }
-  }, [rituals, persistRituals])
+  }, [])
 
   /**
-   * Delete ritual from library
+   * Delete ritual from library via backend API
    */
   const deleteRitual = useCallback(async (id: string) => {
     try {
-      const updatedRituals = rituals.filter((r) => r.id !== id)
-      setRituals(updatedRituals)
-      await persistRituals(updatedRituals)
+      // Delete from backend
+      await apiDeleteRitual(id)
+
+      // Update local state
+      setRituals(prevRituals => prevRituals.filter((r) => r.id !== id))
+
+      console.log('[RitualContext] Ritual deleted:', id)
     } catch (error) {
       console.error('[RitualContext] Failed to delete ritual:', error)
       throw error
     }
-  }, [rituals, persistRituals])
+  }, [])
 
   /**
    * Delete all rituals from library
    */
   const deleteAllRituals = useCallback(async () => {
     try {
+      // Delete each ritual from backend
+      const deletePromises = rituals.map(r => apiDeleteRitual(r.id).catch(() => {
+        // Ignore individual delete errors
+      }))
+      await Promise.all(deletePromises)
+
+      // Clear local state
       setRituals([])
-      await persistRituals([])
+
       console.log('[RitualContext] All rituals deleted')
     } catch (error) {
       console.error('[RitualContext] Failed to delete all rituals:', error)
       throw error
     }
-  }, [persistRituals])
+  }, [rituals])
 
   /**
-   * Duplicate ritual
+   * Duplicate ritual via backend API
    */
   const duplicateRitual = useCallback(async (id: string): Promise<Ritual> => {
     const ritual = rituals.find((r) => r.id === id)
@@ -268,25 +270,26 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
     }
 
     const now = Timestamp.now()
+    const newId = `ritual-${Date.now()}`
     const duplicated: Ritual = {
       ...ritual,
-      id: `ritual-${Date.now()}`,
+      id: newId,
       title: `${ritual.title} (Copy)`,
       createdAt: now,
       updatedAt: now,
-      statistics: ritual.statistics
-        ? {
-            id: `stats-${Date.now()}`,
-            ritualId: `ritual-${Date.now()}`,
-            isFavorite: false,
-            usageCount: 0,
-          }
-        : null,
+      audioStatus: 'pending', // Reset audio status for new ritual
+      statistics: null, // Start fresh statistics
     }
 
-    await saveRitual(duplicated)
-    return duplicated
-  }, [rituals, saveRitual])
+    // Save to backend
+    const saved = await apiCreateRitual(duplicated)
+
+    // Update local state
+    setRituals(prevRituals => [...prevRituals, saved])
+
+    console.log('[RitualContext] Ritual duplicated:', saved.id)
+    return saved
+  }, [rituals])
 
   /**
    * Get ritual by ID
