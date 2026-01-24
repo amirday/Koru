@@ -67,7 +67,7 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
-  { route: 'home', label: 'Home', icon: HomeIcon },
+  { route: 'feed', label: 'Feed', icon: HomeIcon },
   { route: 'rituals', label: 'Rituals', icon: BookIcon },
   { route: 'dashboard', label: 'Dashboard', icon: ChartIcon },
   { route: 'profile', label: 'Profile', icon: UserIcon },

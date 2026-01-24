@@ -69,14 +69,15 @@ A goal-driven ritual generator that creates personalized meditation sessions, gu
 ## 2. Navigation Model
 
 ### Bottom Tab Bar (persistent)
-1. **Home** – goals, quick starts, generate
+1. **Feed** – discover rituals, templates, quick starts
 2. **Rituals** – ritual library + editor
 3. **Dashboard** – trends, calendar, insights
 4. **Profile** – settings, reminders, preferences
 
-⚠️ **Session screen is fullscreen modal**  
-- Hides navigation
-- Sacred, distraction-free
+⚠️ **Fullscreen routes (no tab bar)**
+- Session screen – sacred, distraction-free
+- Generation flow – focused creation experience
+- Reflection screen – post-session capture
 
 ---
 
@@ -238,83 +239,171 @@ Small, pill-shaped indicators that convey ritual metadata at a glance.
 
 ---
 
-## 6. Screen 1 – Home
+## 6. Screen 1 – Feed
+
+The Feed screen replaces the previous Home screen with a vertical, scrollable list of rituals.
 
 ### Layout (Top → Bottom)
 
 #### Header
-- Greeting (optional)
-- Reminder / streak indicator
+- Title: "Feed"
+- Simple, clean header
 
-#### 1.1 Goal Box
-- Title: “My goal”
-- Editable text
-- Inline edit (tap or pencil)
-- Helper text: “Short is fine. Clarity beats poetry.”
+#### 6.1 Ritual Feed (Vertical Scroll)
+A continuous vertical list combining:
+- **Discover section**: Template rituals (quick starts)
+- **Your Rituals section**: User's saved rituals
 
-#### 1.2 Quick Starts (Horizontal Carousel)
-Each card includes:
-- Title (e.g. “Reset – 3 min”)
-- Benefit (“For anxious moments”)
-- Tag (Breath / Body / Sleep)
-- Tap → start session
-- Long-press → preview / edit / save
+Each **FeedRitualCard** includes:
+- Title (serif, prominent)
+- Description (2-line truncate)
+- Badges: Duration, Tone, Soundscape icon
+- Template badge (for quick starts)
+- Favorite indicator (heart icon)
+- Tap → Navigate to Generation screen (with template pre-filled)
 
-Suggested quick starts:
-- Reset (3)
-- Focus Primer (5)
-- Wind-Down (10)
-- Gratitude (7)
-- Confidence (8)
-- Silent Timer (5–20)
+**Card Design**:
+- Full-width with rounded corners (16px radius)
+- White background with subtle border
+- Warm shadow on hover
+- Subtle scale animation on tap
 
-#### 1.3 Generate Section
-- Primary CTA: **"Generate today's ritual"**
-- Optional configuration (smart defaults with user override):
-  - Duration selector (dropdown: 5/10/15/20 min)
-  - Tone selector (dropdown: Gentle/Neutral/Coach)
-  - "Include silence" toggle
-  - Soundscape selector (dropdown: auto-select based on ritual type, user can override)
+#### 6.2 Sticky Create Button
+- Fixed position above bottom tab bar
+- White card with left peach accent border
+- Plus icon + "Create your own ritual"
+- Sub-text: "Personalized meditation just for you"
+- Tap → Navigate to Generation screen (blank form)
 
-**Generating Flow (Hybrid Approach)**
+**Sticky Button Design**:
+- Elevated with shadow-lg
+- Always visible while scrolling
+- Respects safe area insets
 
-*The generation experience combines real-time feedback with non-blocking background execution:*
+---
 
-**Phase 1: Active Generation UI**
-- Full-width card appears with progress indicator
-- Shows staged messages as AI works:
-  1. "Understanding your intention..." (0–25%, ~1.5s)
-  2. "Choosing the right pace..." (25–50%, ~1.5s)
-  3. "Crafting your guidance..." (50–75%, ~1.5s)
-  4. "Your ritual is ready" (75–100%, ~1.5s)
-- Progress bar animates smoothly between stages
-- User can dismiss/background the task at any time
+## 6.5 Screen 1b – Ritual Generation Flow
 
-**Phase 2: Clarifying Questions (Optional)**
-- During generation, AI may prompt for clarification
-- Modal appears with question:
-  - Question text (e.g., "What time of day will you practice?")
-  - Multiple choice options (radio buttons)
-  - "Other (type your own)" option with text input
-  - Submit button
-- Generation pauses until user responds
-- Can happen at any stage (typically after "Understanding your intention")
+A dedicated multi-step flow for creating personalized rituals. Fullscreen (no bottom nav).
 
-**Phase 3: Background Generation**
-- User can navigate away to other tabs/screens
-- Generation continues in background (async task)
-- Small indicator in header or bottom tab bar shows "Generating..."
-- When complete:
-  - Browser notification (if permission granted): "Your ritual is ready!"
-  - In-app toast notification (always shown)
-  - Tapping notification navigates to ritual preview/library
+### 6.5.1 Generation Form Screen (`/generate`)
 
-**Error Handling**
-- If generation fails: show error toast with retry button
-- Network errors: graceful fallback with "Try again" option
-- Timeout after 30s: show warning, offer to continue waiting or cancel
+**Header**:
+- Back button (left)
+- Title: "Create Ritual"
 
-#### 1.4 Bottom Navigation Bar
+**Form Fields** (vertical scroll):
+
+1. **Ritual Name** (required)
+   - Text input
+   - Placeholder: "e.g., Morning Focus, Evening Wind-Down"
+
+2. **Your Goals** (required)
+   - Textarea (4 rows)
+   - Placeholder: "What do you want to achieve with this meditation?"
+
+3. **Duration**
+   - Horizontal button group
+   - Options: 5, 10, 15, 20, 30 min
+   - Default: 10 min
+
+4. **Meditation Guide** (Voice)
+   - Radio-style list selection
+   - Each option shows: name, provider badge, description
+   - Loads from voices.json
+   - Default: Aoede
+
+5. **Background Audio** (Soundscape)
+   - Horizontal pill buttons with icons
+   - Options: Ocean, Forest, Rain, Fire, None
+   - Default: None
+
+**CTA**:
+- Full-width "Generate" button
+- Validates required fields before proceeding
+
+**Backend Defaults** (not exposed in UI):
+- tone: "gentle"
+- includeSilence: true
+- pace: "medium"
+
+---
+
+### 6.5.2 Generation Progress Screen (`/generate/progress`)
+
+Fullscreen, centered layout. Immersive experience.
+
+**Elements**:
+- Animated pulsing circles (concentric, peach colors)
+- Central sparkle icon
+- Title: "Your ritual is being generated"
+- Progress bar with percentage
+- Stage message (italic, changes as progress advances)
+- Cancel button (disabled near completion)
+
+**Progress Stages** (mock 3-5 second total):
+1. "Understanding your goals..." (10%)
+2. "Crafting your meditation..." (25%)
+3. "Writing guided passages..." (45%)
+4. "Adding mindful pauses..." (65%)
+5. "Generating audio..." (80%)
+6. "Final touches..." (95%)
+7. "Complete!" (100%)
+
+**Behavior**:
+- Auto-navigates to Complete screen when done
+- Cancel returns to Feed
+- Progress data stored in sessionStorage
+
+---
+
+### 6.5.3 Generation Complete Screen (`/generate/complete/:id`)
+
+Fullscreen, centered layout. Celebration moment.
+
+**Elements**:
+- Success checkmark (green circle with check)
+- Title: "Your ritual is ready!"
+- Ritual preview card:
+  - Name
+  - Duration + Tone badges
+  - Soundscape indicator
+  - Goals preview (truncated)
+- Primary CTA: "Play Now" (with play icon)
+- Secondary CTA: "Add to Gallery"
+
+**Actions**:
+- **Play Now**: Navigate to Session player (`/session/:id`)
+- **Add to Gallery**: Save ritual, show toast, navigate to Feed
+
+---
+
+### Generation Flow Navigation
+
+```
+Feed Screen
+    │
+    ├── Tap ritual card ──────────┐
+    │                             │
+    └── Tap "Create your own" ────┴──→ Generation Form
+                                              │
+                                              ├── Fill form
+                                              │
+                                              └── Tap "Generate"
+                                                      │
+                                                      ▼
+                                            Progress Screen
+                                                      │
+                                                      ▼ (3-5s mock)
+                                            Complete Screen
+                                                      │
+                                        ┌─────────────┴─────────────┐
+                                        │                           │
+                                   "Play Now"                "Add to Gallery"
+                                        │                           │
+                                        ▼                           ▼
+                                  /session/:id               Save & → /feed
+```
 
 ---
 

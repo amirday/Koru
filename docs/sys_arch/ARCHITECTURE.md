@@ -113,10 +113,19 @@ koru/
 │   │   │   ├── GoalBox.tsx
 │   │   │   └── QuickStartCard.tsx
 │   │   │
+│   │   ├── feed/                    # Feed screen components
+│   │   │   ├── FeedRitualCard.tsx    # Vertical card for feed display
+│   │   │   ├── StickyCreateButton.tsx # Fixed bottom create button
+│   │   │   └── index.ts
+│   │   │
 │   │   ├── generation/              # AI generation UI
+│   │   │   ├── DurationPicker.tsx    # Duration selection buttons
+│   │   │   ├── VoiceSelector.tsx     # Voice selection radio list
+│   │   │   ├── SoundscapeSelector.tsx # Soundscape pill buttons
 │   │   │   ├── GenerateButton.tsx
 │   │   │   ├── GenerationProgress.tsx
-│   │   │   └── ClarifyingQuestionModal.tsx
+│   │   │   ├── ClarifyingQuestionModal.tsx
+│   │   │   └── index.ts
 │   │   │
 │   │   ├── rituals/                 # Ritual library UI
 │   │   │   ├── RitualCard.tsx
@@ -154,8 +163,16 @@ koru/
 │   │   ├── Onboarding/
 │   │   │   ├── WelcomeScreen.tsx
 │   │   │   └── InitialGoalSetupScreen.tsx
+│   │   ├── Feed/
+│   │   │   ├── FeedScreen.tsx        # Main feed with ritual list
+│   │   │   └── index.ts
+│   │   ├── Generation/
+│   │   │   ├── RitualGenerationScreen.tsx  # Form screen
+│   │   │   ├── GenerationProgressScreen.tsx # Progress animation
+│   │   │   ├── GenerationCompleteScreen.tsx # Success with actions
+│   │   │   └── index.ts
 │   │   ├── Home/
-│   │   │   └── HomeScreen.tsx
+│   │   │   └── HomeScreen.tsx        # Legacy (redirects to /feed)
 │   │   ├── Rituals/
 │   │   │   ├── RitualLibraryScreen.tsx
 │   │   │   └── RitualEditorScreen.tsx
@@ -1026,7 +1043,9 @@ React Frontend ──────► Python Backend ──────► Extern
 /setup                      → InitialGoalSetupScreen (onboarding)
 
 / (AppLayout wrapper)
-├── /home                   → HomeScreen
+├── /feed                   → FeedScreen (main feed)
+├── /home                   → Redirect to /feed
+├── /generate               → RitualGenerationScreen (form)
 ├── /rituals                → RitualLibraryScreen
 ├── /rituals/new            → RitualEditorScreen (create)
 ├── /rituals/:id/edit       → RitualEditorScreen (edit)
@@ -1036,6 +1055,8 @@ React Frontend ──────► Python Backend ──────► Extern
 
 /session/:ritualId          → SessionScreen (fullscreen, no nav)
 /reflection/:sessionId      → ReflectionScreen (fullscreen, no nav)
+/generate/progress          → GenerationProgressScreen (fullscreen, no nav)
+/generate/complete/:id      → GenerationCompleteScreen (fullscreen, no nav)
 ```
 
 ### 8.2 Navigation Guards
@@ -1061,15 +1082,15 @@ function RequireOnboarding({ children }) {
 | Route Pattern | Layout | Bottom Nav |
 |---------------|--------|------------|
 | `/welcome`, `/setup` | None | Hidden |
-| `/home`, `/rituals`, `/dashboard`, `/profile` | AppLayout | Visible |
-| `/session/*`, `/reflection/*` | Fullscreen | Hidden |
+| `/feed`, `/generate`, `/rituals`, `/dashboard`, `/profile` | AppLayout | Visible |
+| `/session/*`, `/reflection/*`, `/generate/progress`, `/generate/complete/*` | Fullscreen | Hidden |
 
 ### 8.4 Bottom Tab Bar
 
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                                                          │
-│   🏠 Home      📚 Rituals      📊 Dashboard      👤 Profile   │
+│   📱 Feed      📚 Rituals      📊 Dashboard      👤 Profile   │
 │                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -1189,25 +1210,45 @@ function RequireOnboarding({ children }) {
   Goal prompt      Duration/Tone         Ritual library
 ```
 
-### 10.2 Generate & Meditate
+### 10.2 Feed & Generate Flow
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│    Home     │────▶│  Generating │────▶│  Clarifying │
-│   Screen    │     │  Progress   │     │  Question   │
-└─────────────┘     └─────────────┘     └─────────────┘
-     │                    │                    │
-     │ "Generate"         │ 4-stage            │ Optional
-     │                    │ progress           │ prompt
-     ▼                    ▼                    ▼
-                   ┌─────────────┐     ┌─────────────┐
-                   │   Session   │────▶│ Reflection  │
-                   │   Player    │     │   Screen    │
-                   └─────────────┘     └─────────────┘
-                         │                    │
-                         │ Fullscreen         │ Post-session
-                         │ sacred mode        │ capture
-                         ▼                    ▼
+┌─────────────┐                         ┌─────────────┐
+│    Feed     │───── Tap ritual card ──▶│  Generation │
+│   Screen    │         or              │    Form     │
+│             │   "Create your own"     │   Screen    │
+└─────────────┘                         └─────────────┘
+     │                                        │
+     │ Vertical scroll                        │ Fill form
+     │ Templates + saved                      │ (name, goals,
+     │ rituals                                │  duration, voice,
+     │                                        │  soundscape)
+     │                                        ▼
+     │                                  ┌─────────────┐
+     │                                  │  Progress   │
+     │                                  │   Screen    │
+     │                                  └─────────────┘
+     │                                        │
+     │                                        │ 3-5s mock delay
+     │                                        │ animated stages
+     │                                        ▼
+     │                                  ┌─────────────┐
+     │                                  │  Complete   │
+     │◀───── "Add to Gallery" ──────────│   Screen    │
+     │                                  └─────────────┘
+     │                                        │
+     │                                        │ "Play Now"
+     │                                        ▼
+     │                                  ┌─────────────┐
+     │                                  │   Session   │
+     │                                  │   Player    │
+     │                                  └─────────────┘
+     │                                        │
+     │                                        ▼
+     │                                  ┌─────────────┐
+     │                                  │ Reflection  │
+     │                                  │   Screen    │
+     │                                  └─────────────┘
 ```
 
 ### 10.3 Browse & Edit Rituals

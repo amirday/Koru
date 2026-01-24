@@ -94,7 +94,7 @@ export interface SelectOption {
 // Navigation
 // ====================
 
-export type TabRoute = 'home' | 'rituals' | 'dashboard' | 'profile'
+export type TabRoute = 'feed' | 'rituals' | 'dashboard' | 'profile'
 
 export interface NavigationTab {
   /** Route identifier */

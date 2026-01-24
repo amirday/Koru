@@ -7,11 +7,16 @@ import { RequireOnboarding } from './RequireOnboarding'
 import { AppLayout } from './AppLayout'
 import { WelcomeScreen } from '@/screens/Onboarding/WelcomeScreen'
 import { InitialGoalSetupScreen } from '@/screens/Onboarding/InitialGoalSetupScreen'
-import { HomeScreen } from '@/screens/Home/HomeScreen'
+import { FeedScreen } from '@/screens/Feed'
 import { RitualLibraryScreen, RitualEditorScreen } from '@/screens/Rituals'
 import { SessionScreen, ReflectionScreen } from '@/screens/Session'
 import { DashboardScreen, SessionDetailScreen } from '@/screens/Dashboard'
 import { ProfileScreen } from '@/screens/Profile'
+import {
+  RitualGenerationScreen,
+  GenerationProgressScreen,
+  GenerationCompleteScreen,
+} from '@/screens/Generation'
 
 /**
  * App route configuration
@@ -44,6 +49,22 @@ export const routes: RouteObject[] = [
       </RequireOnboarding>
     ),
   },
+  {
+    path: '/generate/progress',
+    element: (
+      <RequireOnboarding>
+        <GenerationProgressScreen />
+      </RequireOnboarding>
+    ),
+  },
+  {
+    path: '/generate/complete/:id',
+    element: (
+      <RequireOnboarding>
+        <GenerationCompleteScreen />
+      </RequireOnboarding>
+    ),
+  },
 
   // Main app routes (require onboarding)
   {
@@ -55,11 +76,19 @@ export const routes: RouteObject[] = [
     children: [
       {
         path: '/',
-        element: <Navigate to="/home" replace />,
+        element: <Navigate to="/feed" replace />,
       },
       {
         path: '/home',
-        element: <HomeScreen />,
+        element: <Navigate to="/feed" replace />,
+      },
+      {
+        path: '/feed',
+        element: <FeedScreen />,
+      },
+      {
+        path: '/generate',
+        element: <RitualGenerationScreen />,
       },
       {
         path: '/rituals',
@@ -88,9 +117,9 @@ export const routes: RouteObject[] = [
     ],
   },
 
-  // Catch-all: redirect to home
+  // Catch-all: redirect to feed
   {
     path: '*',
-    element: <Navigate to="/home" replace />,
+    element: <Navigate to="/feed" replace />,
   },
 ]

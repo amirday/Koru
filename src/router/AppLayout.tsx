@@ -17,11 +17,11 @@ export function AppLayout() {
   // Determine active tab from current route
   const getActiveTab = (): TabRoute => {
     const path = location.pathname
-    if (path.startsWith('/home')) return 'home'
+    if (path.startsWith('/feed')) return 'feed'
     if (path.startsWith('/rituals')) return 'rituals'
     if (path.startsWith('/dashboard')) return 'dashboard'
     if (path.startsWith('/profile')) return 'profile'
-    return 'home' // default
+    return 'feed' // default
   }
 
   // Determine if bottom nav should be visible
@@ -32,7 +32,7 @@ export function AppLayout() {
       return false
     }
     // Show on main app routes
-    return ['/home', '/rituals', '/dashboard', '/profile'].some((route) =>
+    return ['/feed', '/rituals', '/dashboard', '/profile'].some((route) =>
       path.startsWith(route)
     )
   }

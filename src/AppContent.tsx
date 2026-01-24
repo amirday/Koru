@@ -27,7 +27,7 @@ export function AppContent() {
   const [buttonLoading, setButtonLoading] = useState(false)
 
   // Test layout components
-  const [activeTab, setActiveTab] = useState<TabRoute>('home')
+  const [activeTab, setActiveTab] = useState<TabRoute>('feed')
   const [showTabBar, setShowTabBar] = useState(true)
   const [showHeader, setShowHeader] = useState(false)
 
