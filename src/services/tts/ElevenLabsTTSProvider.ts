@@ -129,11 +129,12 @@ export class ElevenLabsTTSProvider implements TTSProvider {
           },
           body: JSON.stringify({
             text: options.text,
-            model_id: 'eleven_monolingual_v1',
+            model_id: 'eleven_multilingual_v2',
+            output_format: 'mp3_44100_128',
             voice_settings: {
-              stability: 0.75, // Higher for more consistent, calmer voice
+              stability: 0.75,
               similarity_boost: 0.75,
-              style: 0.5, // Moderate expressiveness
+              style: 0.5,
               use_speaker_boost: true,
             },
           }),

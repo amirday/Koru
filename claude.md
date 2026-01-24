@@ -58,3 +58,4 @@ A task is done only if:
 - Styling matches the design system and stays consistent across screens.
 - All test passed and plan (if availble) completion and test status is updated. your job is to update the atuomated tests, and I will update the manuale tests. rename once done rename the file to `<#setep>_done_<name>.md`
 - **Documentation updated**: `UI_design.md` and/or `ARCHITECTURE.md` reflect any new or changed components, services, or flows.
+- after planning alsway create a plan md in docs/plans

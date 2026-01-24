@@ -988,6 +988,33 @@ interface SectionAudio {
 
 **Verification**: Full ritual audio matches target durations (±1 second tolerance)
 
+### 7.9 Python Backend (Planned)
+
+**Purpose**: Secure API key handling, centralized TTS/AI orchestration, and file-based audio storage.
+
+```
+React Frontend ──────► Python Backend ──────► External APIs
+(no API keys)          (FastAPI)             (OpenAI, TTS)
+                            │
+                            ▼
+                       File Storage
+                  (rituals/, audio/)
+```
+
+**Key Features**:
+- Ritual generation via OpenAI
+- TTS synthesis (Google Gemini, ElevenLabs)
+- File-based ritual and audio storage
+- Centralized rate limiting
+
+**API Endpoints**:
+- `POST /api/generate/ritual` - Generate ritual text
+- `POST /api/tts/synthesize` - Synthesize speech
+- `GET/POST/DELETE /api/rituals` - Ritual CRUD
+- `GET /api/audio/{ritual_id}/{filename}` - Serve audio
+
+> **Full Plan**: See [`docs/plans/python_backend_plan.md`](../plans/python_backend_plan.md) for complete architecture, project structure, and implementation details.
+
 ---
 
 ## 8. Routing & Navigation
@@ -1285,58 +1312,48 @@ function RequireOnboarding({ children }) {
 
 ## 12. Future Architecture
 
-### 12.1 Backend Integration
+### 12.1 Evolution Roadmap
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Future Backend                        │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  ┌──────────────┐     ┌──────────────┐                  │
-│  │   Supabase   │     │   Claude AI  │                  │
-│  │   or Firebase│     │      API     │                  │
-│  ├──────────────┤     ├──────────────┤                  │
-│  │ • Auth       │     │ • Generation │                  │
-│  │ • Database   │     │ • Clarifying │                  │
-│  │ • Realtime   │     │ • Insights   │                  │
-│  │ • Storage    │     │              │                  │
-│  └──────────────┘     └──────────────┘                  │
-│                                                          │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │                  TTS Service                      │   │
-│  │  • ElevenLabs / OpenAI TTS                       │   │
-│  │  • Audio file generation & caching               │   │
-│  └──────────────────────────────────────────────────┘   │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+Phase 1 (Current)     Phase 2 (Next)        Phase 3 (Future)
+─────────────────     ──────────────        ────────────────
+React + Mock      →   Python Backend    →   Cloud Backend
+localStorage          File Storage          Supabase/Firebase
+No Auth               Token-based           Full Auth
 ```
 
-### 12.2 Migration Path
+### 12.2 Python Backend (Next Phase)
 
-**Storage**:
-```
-localStorage → IndexedDB → Supabase/Firebase
-```
+Python FastAPI backend for secure API key management and centralized TTS/AI orchestration.
 
-**AI**:
-```
-MockAIProvider → ClaudeAIProvider → Production API
-```
+> **Full Plan**: See [`docs/plans/python_backend_plan.md`](../plans/python_backend_plan.md)
 
-**Authentication**:
-```
-None → Supabase Auth / Firebase Auth
-```
+**Summary**:
+- Ritual generation via OpenAI
+- TTS synthesis (Google Gemini, ElevenLabs)
+- File-based storage for rituals and audio
+- API keys secured on backend
 
-### 12.3 Scalability Considerations
+### 12.3 Cloud Backend (Future Phase)
 
-| Area | Current | Future |
-|------|---------|--------|
-| **Data** | localStorage (~5MB) | Cloud database (unlimited) |
-| **Generation** | Mock (instant) | Queue system (rate limiting) |
-| **Audio** | Mock (no files) | CDN-hosted soundscapes |
-| **Sync** | Single device | Multi-device sync |
-| **Offline** | Full offline | Offline-first with sync |
+Full cloud integration with authentication, database, and multi-device sync.
+
+| Component | Technology |
+|-----------|------------|
+| Auth | Supabase Auth / Firebase Auth |
+| Database | Cloud DB (unlimited storage) |
+| AI | Claude API / OpenAI |
+| TTS | ElevenLabs with CDN caching |
+
+### 12.4 Scalability Considerations
+
+| Area | Current (Mock) | Python Backend | Cloud Backend |
+|------|----------------|----------------|---------------|
+| **Data** | localStorage (~5MB) | File JSON | Cloud DB |
+| **Generation** | Mock (instant) | Real API + rate limiting | Queue system |
+| **Audio** | Mock (no files) | File storage | CDN-hosted |
+| **API Keys** | Frontend .env | Backend secured | Cloud secrets |
+| **Sync** | Single device | Single device | Multi-device |
 
 ---
 
