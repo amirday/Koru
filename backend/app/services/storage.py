@@ -87,6 +87,50 @@ class StorageService:
         # Return URL path
         return f"/api/audio/{ritual_id}/{filename}"
 
+    def audio_exists(self, ritual_id: str, segment_id: str) -> bool:
+        """Check if audio file exists for a segment (any supported format)."""
+        ritual_audio_dir = self.audio_path / ritual_id
+        if not ritual_audio_dir.exists():
+            return False
+
+        # Check for common audio extensions
+        for ext in ["mp3", "wav"]:
+            file_path = ritual_audio_dir / f"{segment_id}.{ext}"
+            if file_path.exists():
+                return True
+        return False
+
+    def get_ritual_audio_status(self, ritual_id: str) -> dict:
+        """
+        Get audio status for a ritual.
+        Returns dict with segment IDs and whether audio exists.
+        """
+        ritual = self.load_ritual(ritual_id)
+        if not ritual:
+            return {"exists": False, "segments": {}}
+
+        segments_status = {}
+        total_text_segments = 0
+        existing_audio = 0
+
+        for section in ritual.sections:
+            for segment in section.segments:
+                if segment.type == "text" and segment.text:
+                    total_text_segments += 1
+                    exists = self.audio_exists(ritual_id, segment.id)
+                    segments_status[segment.id] = exists
+                    if exists:
+                        existing_audio += 1
+
+        return {
+            "exists": True,
+            "ritual_id": ritual_id,
+            "segments": segments_status,
+            "total": total_text_segments,
+            "generated": existing_audio,
+            "missing": total_text_segments - existing_audio,
+        }
+
 
 # Singleton instance
 _storage_service: Optional[StorageService] = None

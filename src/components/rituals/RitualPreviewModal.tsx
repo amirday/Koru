@@ -2,16 +2,20 @@
  * RitualPreviewModal - Full ritual preview before starting
  */
 
+import { useState, useEffect } from 'react'
 import type { Ritual, RitualTone, Soundscape } from '@/types'
 import { Modal, Button } from '@/components/ui'
 import { SectionList } from './SectionList'
+import { getRitualAudioStatus, generateRitualAudio, getProviderFromVoiceId } from '@/services/api'
+
+type AudioStatus = 'loading' | 'none' | 'partial' | 'ready' | 'generating'
 
 export interface RitualPreviewModalProps {
   /** Ritual to preview (null = closed) */
   ritual: Ritual | null
   /** Close callback */
   onClose: () => void
-  /** Start session callback */
+  /** Start session callback (only called when audio is ready) */
   onStart: (ritual: Ritual) => void
   /** Edit ritual callback */
   onEdit: (ritual: Ritual) => void
@@ -61,11 +65,77 @@ export function RitualPreviewModal({
   onEdit,
   onSaveAsNew,
 }: RitualPreviewModalProps) {
+  const [audioStatus, setAudioStatus] = useState<AudioStatus>('loading')
+  const [audioProgress, setAudioProgress] = useState({ generated: 0, total: 0 })
+
+  // Check audio status when ritual changes
+  useEffect(() => {
+    if (!ritual) return
+
+    const checkAudioStatus = async () => {
+      // Skip for template rituals
+      if (ritual.isTemplate) {
+        setAudioStatus('none')
+        return
+      }
+
+      try {
+        const status = await getRitualAudioStatus(ritual.id)
+        setAudioProgress({ generated: status.generated, total: status.total })
+        setAudioStatus(status.status)
+      } catch (error) {
+        console.error('Failed to check audio status:', error)
+        setAudioStatus('none')
+      }
+    }
+    setAudioStatus('loading')
+    checkAudioStatus()
+  }, [ritual?.id, ritual?.isTemplate])
+
   if (!ritual) return null
 
-  const handleStart = () => {
-    onStart(ritual)
-    onClose()
+  const handleActionButton = async () => {
+    if (audioStatus === 'ready') {
+      onStart(ritual)
+      onClose()
+    } else if (audioStatus === 'none' || audioStatus === 'partial') {
+      setAudioStatus('generating')
+      try {
+        const voiceId = ritual.voiceId || 'sarah'
+        const result = await generateRitualAudio({
+          ritualId: ritual.id,
+          voiceId,
+          provider: getProviderFromVoiceId(voiceId),
+        })
+        setAudioProgress({ generated: result.segmentsGenerated + audioProgress.generated, total: result.segmentsTotal })
+        setAudioStatus(result.status === 'ready' ? 'ready' : 'partial')
+
+        if (result.status === 'ready') {
+          onStart(ritual)
+          onClose()
+        }
+      } catch (error) {
+        console.error('Failed to generate audio:', error)
+        setAudioStatus('partial')
+      }
+    }
+  }
+
+  const getButtonText = (): string => {
+    switch (audioStatus) {
+      case 'loading':
+        return 'Checking...'
+      case 'generating':
+        return 'Generating Audio...'
+      case 'none':
+        return 'Generate Audio'
+      case 'partial':
+        return `Complete Audio (${audioProgress.generated}/${audioProgress.total})`
+      case 'ready':
+        return 'Start Session'
+      default:
+        return 'Start Session'
+    }
   }
 
   const handleEdit = () => {
@@ -149,11 +219,13 @@ export function RitualPreviewModal({
       {/* Actions */}
       <div className="border-t border-calm-200 px-4 py-4 flex flex-col sm:flex-row gap-3">
         <Button
-          variant="primary"
+          variant={audioStatus === 'ready' ? 'primary' : 'secondary'}
           fullWidth
-          onClick={handleStart}
+          onClick={handleActionButton}
+          loading={audioStatus === 'generating'}
+          disabled={audioStatus === 'loading'}
         >
-          Start Session
+          {getButtonText()}
         </Button>
         <Button
           variant="secondary"

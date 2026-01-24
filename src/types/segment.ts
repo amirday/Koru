@@ -24,8 +24,10 @@ export interface Segment {
   durationSeconds: number
 
   // Audio (populated after TTS generation)
-  /** Generated audio blob (populated after TTS) */
+  /** Generated audio blob (populated after TTS - frontend only) */
   audioBlob?: Blob
+  /** URL to pre-generated audio file on backend */
+  audioUrl?: string
   /** Measured actual audio duration in seconds */
   actualDurationSeconds?: number
 }

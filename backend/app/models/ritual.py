@@ -75,6 +75,8 @@ class RitualCreate(BaseModel):
     focus_areas: list[str] = Field(alias="focusAreas", default=[])
     tone: Literal["gentle", "neutral", "coach"] = "gentle"
     include_silence: bool = Field(True, alias="includeSilence")
+    voice_id: str = Field("sarah", alias="voiceId")
+    tts_provider: Literal["elevenlabs", "google"] = Field("elevenlabs", alias="provider")
 
     class Config:
         populate_by_name = True

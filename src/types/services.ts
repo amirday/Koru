@@ -24,6 +24,10 @@ export interface AIGenerationOptions {
   soundscape?: Soundscape
   /** Additional preferences or context for generation (optional) */
   additionalPreferences?: string
+  /** Selected voice ID for TTS */
+  voiceId?: string
+  /** TTS provider to use */
+  provider?: 'elevenlabs' | 'google'
 }
 
 export interface AIGenerationProgress {

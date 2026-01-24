@@ -6,6 +6,9 @@ export {
   // Error class
   BackendAPIError,
 
+  // Utils
+  getProviderFromVoiceId,
+
   // Ritual generation
   generateRitual,
   type GenerateRitualRequest,
@@ -21,8 +24,13 @@ export {
   synthesizeSpeech,
   getVoices,
   getAudioUrl,
+  getRitualAudioStatus,
+  generateRitualAudio,
   type SynthesizeRequest,
   type SynthesizeResponse,
+  type RitualAudioStatusResponse,
+  type GenerateRitualAudioRequest,
+  type GenerateRitualAudioResponse,
 
   // Health
   checkHealth,

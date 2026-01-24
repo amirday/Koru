@@ -1,11 +1,12 @@
 /**
  * GenerateButton component - Primary CTA to start ritual generation
- * Features: duration/tone dropdowns, silence toggle, loading state
+ * Features: duration/tone dropdowns, voice selector, silence toggle, loading state
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button, Card, Toggle } from '@/components/ui'
-import type { RitualTone, AIGenerationOptions } from '@/types'
+import { getTTSService } from '@/services/tts'
+import type { RitualTone, AIGenerationOptions, Voice } from '@/types'
 
 export interface GenerateButtonProps {
   /** Generation start handler */
@@ -48,14 +49,43 @@ export function GenerateButton({
   const [duration, setDuration] = useState(defaultDuration)
   const [tone, setTone] = useState<RitualTone>(defaultTone)
   const [includeSilence, setIncludeSilence] = useState(defaultIncludeSilence)
+  const [voices, setVoices] = useState<Voice[]>([])
+  const [selectedVoice, setSelectedVoice] = useState<string>('sarah')
+
+  // Load available voices on mount
+  useEffect(() => {
+    const loadVoices = async () => {
+      try {
+        const ttsService = getTTSService()
+        const allVoices = await ttsService.getVoices()
+        // Filter to only available voices
+        const availableVoices = allVoices.filter(v => ttsService.isVoiceAvailable(v.id))
+        setVoices(availableVoices)
+        // Set default voice if available
+        const firstVoice = availableVoices[0]
+        if (firstVoice && !availableVoices.find(v => v.id === selectedVoice)) {
+          setSelectedVoice(firstVoice.id)
+        }
+      } catch (error) {
+        console.error('Failed to load voices:', error)
+      }
+    }
+    loadVoices()
+  }, [])
 
   const handleGenerate = () => {
+    // Determine provider from selected voice
+    const voice = voices.find(v => v.id === selectedVoice)
+    const provider = voice?.provider as 'elevenlabs' | 'google' | undefined
+
     onGenerate({
       instructions: '', // Will be filled from goal context
       duration,
       tone,
       includeSilence,
       soundscape: 'ocean', // Default soundscape
+      voiceId: selectedVoice,
+      provider: provider || 'elevenlabs',
     })
   }
 
@@ -123,6 +153,27 @@ export function GenerateButton({
               ))}
             </div>
           </div>
+
+          {/* Voice selector */}
+          {voices.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-calm-800 mb-2">
+                Voice
+              </label>
+              <select
+                value={selectedVoice}
+                onChange={(e) => setSelectedVoice(e.target.value)}
+                disabled={isGenerating}
+                className="w-full px-3 py-2 rounded-lg border border-calm-300 bg-white text-calm-700 text-sm focus:outline-none focus:ring-2 focus:ring-peach-500 disabled:opacity-50"
+              >
+                {voices.map((voice) => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.name} ({voice.provider === 'elevenlabs' ? 'ElevenLabs' : 'Google'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Silence toggle */}
           <div>

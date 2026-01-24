@@ -1,16 +1,22 @@
 /**
  * useSessionPlayer - Hook for managing session playback with audio
  * Uses AudioSequencer for segment-based playback
+ * Checks backend for pre-generated audio before generating new audio
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Ritual, RitualSection } from '@/types'
 import {
-  ritualAudioGenerator,
   type GenerationProgress,
   type SectionAudio,
 } from '@/services'
-import { AudioSequencer, type SequencerState } from '@/services/audio/AudioSequencer'
+import { AudioSequencer, type SequencerState, type SegmentAudio } from '@/services/audio/AudioSequencer'
+import {
+  getRitualAudioStatus,
+  generateRitualAudio as backendGenerateAudio,
+  getAudioUrl,
+  getProviderFromVoiceId,
+} from '@/services/api'
 
 export type SessionState =
   | 'idle'
@@ -287,26 +293,122 @@ export function useSessionPlayer(ritual: Ritual | null): UseSessionPlayerReturn 
     return () => unsubscribe()
   }, [hasAudio, ritual, currentSectionIndex, state])
 
-  // Generate audio for the ritual
+  /**
+   * Build section audios from ritual's pre-generated audio URLs
+   * Fetches audio blobs from backend and creates SegmentAudio arrays
+   */
+  const buildSectionAudiosFromRitual = useCallback(async (
+    ritual: Ritual,
+    onProgress?: (progress: GenerationProgress) => void
+  ): Promise<SectionAudio[]> => {
+    const sections: SectionAudio[] = []
+    const totalSections = ritual.sections.length
+
+    for (let sectionIndex = 0; sectionIndex < totalSections; sectionIndex++) {
+      const section = ritual.sections[sectionIndex]
+      if (!section) continue
+
+      const segmentAudios: SegmentAudio[] = []
+      const textSegments = section.segments.filter(s => s.type === 'text' && s.text)
+      let segmentIndex = 0
+
+      for (const segment of section.segments) {
+        if (segment.type === 'silence') {
+          // Silence segment - no blob needed
+          segmentAudios.push({
+            segmentId: segment.id,
+            type: 'silence',
+            durationMs: segment.durationSeconds * 1000,
+          })
+        } else if (segment.type === 'text' && segment.text && segment.audioUrl) {
+          onProgress?.({
+            sectionIndex,
+            totalSections,
+            segmentIndex,
+            totalSegments: textSegments.length,
+            percentage: Math.round(((sectionIndex + segmentIndex / textSegments.length) / totalSections) * 100),
+            message: `Loading audio: "${segment.text.slice(0, 30)}..."`,
+          })
+
+          // Fetch audio blob from backend
+          const fullUrl = getAudioUrl(segment.audioUrl)
+          const response = await fetch(fullUrl)
+          if (!response.ok) {
+            throw new Error(`Failed to fetch audio: ${response.statusText}`)
+          }
+          const audioBlob = await response.blob()
+          const durationMs = (segment.actualDurationSeconds || segment.durationSeconds) * 1000
+
+          segmentAudios.push({
+            segmentId: segment.id,
+            type: 'speech',
+            audioBlob,
+            durationMs,
+          })
+          segmentIndex++
+        }
+      }
+
+      sections.push({
+        sectionId: section.id,
+        segments: segmentAudios,
+        totalDurationMs: section.durationSeconds * 1000,
+      })
+
+      onProgress?.({
+        sectionIndex: sectionIndex + 1,
+        totalSections,
+        segmentIndex: textSegments.length,
+        totalSegments: textSegments.length,
+        percentage: Math.round(((sectionIndex + 1) / totalSections) * 100),
+        message: `Loaded section ${sectionIndex + 1} of ${totalSections}`,
+      })
+    }
+
+    return sections
+  }, [])
+
+  // Generate audio for the ritual (or load from backend if already generated)
   const generateAudio = useCallback(async () => {
     if (!ritual) return
 
     setState('generating')
     setGenerationProgress(0)
-    setGenerationMessage('Preparing audio generation...')
+    setGenerationMessage('Checking audio status...')
     setErrorMessage(null)
 
     try {
-      const result = await ritualAudioGenerator.generateRitualAudio(
+      // Step 1: Check if audio already exists on backend
+      const audioStatus = await getRitualAudioStatus(ritual.id)
+      console.log('[useSessionPlayer] Audio status:', audioStatus)
+
+      // Step 2: If not ready, generate via backend
+      if (audioStatus.status !== 'ready') {
+        setGenerationMessage('Generating audio...')
+        const voiceId = ritual.voiceId || 'sarah'
+        const result = await backendGenerateAudio({
+          ritualId: ritual.id,
+          voiceId,
+          provider: getProviderFromVoiceId(voiceId),
+        })
+        console.log('[useSessionPlayer] Backend generation result:', result)
+
+        if (result.status === 'error') {
+          throw new Error('Backend audio generation failed')
+        }
+      }
+
+      // Step 3: Build section audios from ritual's audio URLs
+      setGenerationMessage('Loading audio files...')
+      const sections = await buildSectionAudiosFromRitual(
         ritual,
-        ritual.voiceId,
         (progress: GenerationProgress) => {
           setGenerationProgress(progress.percentage)
           setGenerationMessage(progress.message)
         }
       )
 
-      setSectionAudios(result.sections)
+      setSectionAudios(sections)
       setState('ready')
       setGenerationMessage('Audio ready!')
     } catch (error) {
@@ -316,11 +418,11 @@ export function useSessionPlayer(ritual: Ritual | null): UseSessionPlayerReturn 
       )
       setState('error')
     }
-  }, [ritual])
+  }, [ritual, buildSectionAudiosFromRitual])
 
   // Cancel audio generation
   const cancelGeneration = useCallback(() => {
-    ritualAudioGenerator.cancel()
+    // Note: Backend generation can't be cancelled, but we stop waiting
     setState('idle')
     setGenerationProgress(0)
     setGenerationMessage('')

@@ -8,6 +8,16 @@ import type { Ritual, Voice, RitualTone } from '@/types'
 // Backend API base URL - configure via environment variable
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
 
+// Google voice IDs (case-insensitive)
+const GOOGLE_VOICE_IDS = ['aoede', 'charon']
+
+/**
+ * Determine TTS provider from voice ID
+ */
+export function getProviderFromVoiceId(voiceId: string): 'elevenlabs' | 'google' {
+  return GOOGLE_VOICE_IDS.includes(voiceId.toLowerCase()) ? 'google' : 'elevenlabs'
+}
+
 /**
  * API error class with structured error info
  */
@@ -66,6 +76,8 @@ export interface GenerateRitualRequest {
   focusAreas?: string[]
   tone?: RitualTone
   includeSilence?: boolean
+  voiceId?: string
+  provider?: 'elevenlabs' | 'google'
 }
 
 export interface GenerateRitualResponse {
@@ -106,14 +118,19 @@ export async function getRitual(id: string): Promise<Ritual> {
   return apiFetch<Ritual>(`/api/rituals/${id}`)
 }
 
+interface RitualResponseWrapper {
+  ritual: Ritual
+}
+
 /**
  * Create a new ritual
  */
 export async function createRitual(ritual: Ritual): Promise<Ritual> {
-  return apiFetch<Ritual>('/api/rituals', {
+  const response = await apiFetch<RitualResponseWrapper>('/api/rituals', {
     method: 'POST',
     body: JSON.stringify(ritual),
   })
+  return response.ritual
 }
 
 /**
@@ -161,6 +178,51 @@ export async function synthesizeSpeech(
  */
 export async function getVoices(): Promise<Voice[]> {
   return apiFetch<Voice[]>('/api/tts/voices')
+}
+
+export interface GenerateRitualAudioRequest {
+  ritualId: string
+  voiceId: string
+  provider: 'elevenlabs' | 'google'
+}
+
+export interface GenerateRitualAudioResponse {
+  ritualId: string
+  segmentsGenerated: number
+  segmentsTotal: number
+  segmentsSkipped: number
+  status: 'ready' | 'partial' | 'error'
+}
+
+export interface RitualAudioStatusResponse {
+  ritualId: string
+  total: number
+  generated: number
+  missing: number
+  status: 'none' | 'partial' | 'ready'
+}
+
+/**
+ * Check audio generation status for a ritual.
+ * Returns count of total, generated, and missing audio files.
+ */
+export async function getRitualAudioStatus(
+  ritualId: string
+): Promise<RitualAudioStatusResponse> {
+  return apiFetch<RitualAudioStatusResponse>(`/api/tts/audio-status/${ritualId}`)
+}
+
+/**
+ * Generate TTS audio for text segments in a ritual.
+ * Only generates audio for segments that don't already have files.
+ */
+export async function generateRitualAudio(
+  request: GenerateRitualAudioRequest
+): Promise<GenerateRitualAudioResponse> {
+  return apiFetch<GenerateRitualAudioResponse>('/api/tts/generate-ritual-audio', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
 }
 
 /**

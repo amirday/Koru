@@ -127,6 +127,7 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Start ritual generation via backend API
+   * This generates both the ritual structure (OpenAI) and TTS audio for all segments
    */
   const startGeneration = useCallback(async (options: AIGenerationOptions) => {
     try {
@@ -135,24 +136,27 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
       setClarifyingQuestion(null)
       setGeneratedRitualId(null)
 
-      // Show progress stages for UX feedback
+      // Show progress - ritual structure + audio generation happens on backend
       setGenerationProgress({
         stage: 'structuring',
-        message: 'Analyzing your intention...',
+        message: 'Creating your ritual...',
         progress: 10,
       })
 
-      // Generate ritual via backend API (OpenAI call happens on backend)
+      // Generate ritual via backend API
+      // Backend handles: OpenAI generation + TTS audio for all segments
       const ritual = await apiGenerateRitual({
         intention: options.instructions,
         durationMinutes: Math.round(options.duration / 60),
         tone: options.tone,
         includeSilence: options.includeSilence,
+        voiceId: options.voiceId,
+        provider: options.provider,
       })
 
       setGenerationProgress({
         stage: 'complete',
-        message: 'Ritual created!',
+        message: 'Ritual ready!',
         progress: 100,
       })
 
@@ -163,7 +167,7 @@ export function RitualProvider({ children }: { children: React.ReactNode }) {
       setGeneratedRitualId(ritual.id)
       setIsGenerating(false)
 
-      console.log('[RitualContext] Ritual generated:', ritual.id, ritual.title)
+      console.log('[RitualContext] Ritual generated with audio:', ritual.id, ritual.title)
     } catch (error) {
       console.error('[RitualContext] Generation failed:', error)
       setIsGenerating(false)

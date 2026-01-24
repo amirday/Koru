@@ -1,16 +1,20 @@
 /**
  * RitualCard - Enhanced ritual card with action menu
  * Shows ritual info with Start, Edit, Duplicate, Delete actions
+ * Button shows: "Generate" / "Complete Generation" / "Start" based on audio status
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { Ritual, RitualTone } from '@/types'
 import { Card, Button, Modal } from '@/components/ui'
+import { getRitualAudioStatus, generateRitualAudio, getProviderFromVoiceId } from '@/services/api'
+
+type AudioStatus = 'loading' | 'none' | 'partial' | 'ready' | 'generating'
 
 export interface RitualCardProps {
   /** Ritual data */
   ritual: Ritual
-  /** Callback when Start is clicked */
+  /** Callback when Start is clicked (only when audio is ready) */
   onStart?: (ritual: Ritual) => void
   /** Callback when Edit is clicked */
   onEdit?: (ritual: Ritual) => void
@@ -99,6 +103,29 @@ export function RitualCard({
 }: RitualCardProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [audioStatus, setAudioStatus] = useState<AudioStatus>('loading')
+  const [audioProgress, setAudioProgress] = useState({ generated: 0, total: 0 })
+
+  // Check audio status on mount
+  useEffect(() => {
+    const checkAudioStatus = async () => {
+      // Skip for template rituals
+      if (ritual.isTemplate) {
+        setAudioStatus('none')
+        return
+      }
+
+      try {
+        const status = await getRitualAudioStatus(ritual.id)
+        setAudioProgress({ generated: status.generated, total: status.total })
+        setAudioStatus(status.status)
+      } catch (error) {
+        console.error('Failed to check audio status:', error)
+        setAudioStatus('none')
+      }
+    }
+    checkAudioStatus()
+  }, [ritual.id, ritual.isTemplate])
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't trigger card click if clicking on action buttons
@@ -106,9 +133,52 @@ export function RitualCard({
     onCardClick?.(ritual)
   }
 
-  const handleStart = (e: React.MouseEvent) => {
+  const handleActionButton = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    onStart?.(ritual)
+
+    if (audioStatus === 'ready') {
+      // Audio ready - start the session
+      onStart?.(ritual)
+    } else if (audioStatus === 'none' || audioStatus === 'partial') {
+      // Generate missing audio
+      setAudioStatus('generating')
+      try {
+        const voiceId = ritual.voiceId || 'sarah'
+        const result = await generateRitualAudio({
+          ritualId: ritual.id,
+          voiceId,
+          provider: getProviderFromVoiceId(voiceId),
+        })
+        setAudioProgress({ generated: result.segmentsGenerated + (audioProgress.generated || 0), total: result.segmentsTotal })
+        setAudioStatus(result.status === 'ready' ? 'ready' : 'partial')
+
+        // If ready, automatically start
+        if (result.status === 'ready') {
+          onStart?.(ritual)
+        }
+      } catch (error) {
+        console.error('Failed to generate audio:', error)
+        setAudioStatus('partial')
+      }
+    }
+  }
+
+  // Get button text based on audio status
+  const getButtonText = (): string => {
+    switch (audioStatus) {
+      case 'loading':
+        return '...'
+      case 'generating':
+        return 'Generating...'
+      case 'none':
+        return 'Generate Audio'
+      case 'partial':
+        return 'Complete Audio'
+      case 'ready':
+        return 'Start'
+      default:
+        return 'Start'
+    }
   }
 
   const handleEdit = () => {
@@ -263,11 +333,13 @@ export function RitualCard({
             </div>
 
             <Button
-              variant="primary"
+              variant={audioStatus === 'ready' ? 'primary' : 'secondary'}
               size="sm"
-              onClick={handleStart}
+              onClick={handleActionButton}
+              loading={audioStatus === 'generating'}
+              disabled={audioStatus === 'loading'}
             >
-              Start
+              {getButtonText()}
             </Button>
           </div>
         </Card.Body>
