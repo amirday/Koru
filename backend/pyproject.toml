@@ -1,0 +1,13 @@
+[tool.pytest.ini_options]
+testpaths = ["tests", "app/models/tests", "app/services/tests", "app/api/tests"]
+norecursedirs = ["venv", ".venv", "__pycache__", ".git"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.pyright]
+venvPath = "."
+venv = "venv"

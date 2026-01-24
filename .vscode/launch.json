@@ -2,6 +2,38 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: Current File (Backend)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "python": "${workspaceFolder}/backend/venv/bin/python",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Backend: Run Server",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--reload", "--port", "8000"],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "python": "${workspaceFolder}/backend/venv/bin/python",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Backend: Run Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v"],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "python": "${workspaceFolder}/backend/venv/bin/python",
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Test ElevenLabs TTS",
       "type": "debugpy",
       "request": "launch",
@@ -9,28 +41,18 @@
       "args": ["--save"],
       "cwd": "${workspaceFolder}/scripts",
       "envFile": "${workspaceFolder}/.env",
-      "python": "${workspaceFolder}/scripts/venv/bin/python",
+      "python": "${workspaceFolder}/backend/venv/bin/python",
       "console": "integratedTerminal"
     },
-      {
-      "name": "Test google TTS",
+    {
+      "name": "Test Google TTS",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/scripts/test_google_tts.py",
       "args": ["--save"],
       "cwd": "${workspaceFolder}/scripts",
       "envFile": "${workspaceFolder}/.env",
-      "python": "${workspaceFolder}/scripts/venv/bin/python",
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Test ElevenLabs TTS (Play)",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "${workspaceFolder}/scripts/test_elevenlabs.py",
-      "cwd": "${workspaceFolder}/scripts",
-      "envFile": "${workspaceFolder}/.env",
-      "python": "${workspaceFolder}/scripts/venv/bin/python",
+      "python": "${workspaceFolder}/backend/venv/bin/python",
       "console": "integratedTerminal"
     }
   ]

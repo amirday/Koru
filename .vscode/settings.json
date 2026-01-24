@@ -1,0 +1,22 @@
+{
+    "python.defaultInterpreterPath": "/Users/amirdaygmail.com/projects/Koru/backend/venv/bin/python",
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": [
+        "--rootdir=/Users/amirdaygmail.com/projects/Koru/backend",
+        "-v"
+    ],
+    "python.testing.cwd": "/Users/amirdaygmail.com/projects/Koru/backend",
+    "python.analysis.extraPaths": [
+        "/Users/amirdaygmail.com/projects/Koru/backend"
+    ],
+    "python.envFile": "/Users/amirdaygmail.com/projects/Koru/backend/.env",
+    "python-envs.pythonProjects": [
+        {
+            "path": "backend/venv",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ],
+    "python-envs.defaultEnvManager": "ms-python.python:venv"
+}
