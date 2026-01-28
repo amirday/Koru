@@ -45,6 +45,97 @@ def storage_service(test_storage_path: Path):
 
 
 @pytest.fixture
+def mock_openai_client(test_storage_path: Path) -> Generator[TestClient, None, None]:
+    """TestClient with MockOpenAIProvider injected."""
+    os.environ["STORAGE_PATH"] = str(test_storage_path)
+
+    from app.main import app
+    from app.services.storage import StorageService
+    from tests.mocks import MockOpenAIProvider
+
+    import app.services.storage as storage_module
+    import app.services.openai_provider as openai_module
+
+    original_provider = openai_module._provider
+    original_storage = storage_module._storage_service
+
+    storage_module._storage_service = StorageService(test_storage_path)
+    openai_module._provider = MockOpenAIProvider()
+
+    with TestClient(app) as c:
+        yield c
+
+    openai_module._provider = original_provider
+    storage_module._storage_service = original_storage
+
+
+@pytest.fixture
+def mock_tts_client(test_storage_path: Path) -> Generator[TestClient, None, None]:
+    """TestClient with mock TTS providers injected."""
+    os.environ["STORAGE_PATH"] = str(test_storage_path)
+
+    from app.main import app
+    from app.services.storage import StorageService
+    from app.services.tts_service import TTSService
+    from tests.mocks import MockElevenLabsTTSProvider, MockGoogleTTSProvider
+
+    import app.services.storage as storage_module
+    import app.services.tts_service as tts_module
+
+    original_tts = tts_module._tts_service
+    original_storage = storage_module._storage_service
+
+    storage = StorageService(test_storage_path)
+    storage_module._storage_service = storage
+    tts_module._tts_service = TTSService(
+        elevenlabs_provider=MockElevenLabsTTSProvider(),
+        google_provider=MockGoogleTTSProvider(),
+        storage_service=storage,
+    )
+
+    with TestClient(app) as c:
+        yield c
+
+    tts_module._tts_service = original_tts
+    storage_module._storage_service = original_storage
+
+
+@pytest.fixture
+def mock_all_client(test_storage_path: Path) -> Generator[TestClient, None, None]:
+    """TestClient with both OpenAI and TTS mocked."""
+    os.environ["STORAGE_PATH"] = str(test_storage_path)
+
+    from app.main import app
+    from app.services.storage import StorageService
+    from app.services.tts_service import TTSService
+    from tests.mocks import MockOpenAIProvider, MockElevenLabsTTSProvider, MockGoogleTTSProvider
+
+    import app.services.storage as storage_module
+    import app.services.openai_provider as openai_module
+    import app.services.tts_service as tts_module
+
+    original_provider = openai_module._provider
+    original_tts = tts_module._tts_service
+    original_storage = storage_module._storage_service
+
+    storage = StorageService(test_storage_path)
+    storage_module._storage_service = storage
+    openai_module._provider = MockOpenAIProvider()
+    tts_module._tts_service = TTSService(
+        elevenlabs_provider=MockElevenLabsTTSProvider(),
+        google_provider=MockGoogleTTSProvider(),
+        storage_service=storage,
+    )
+
+    with TestClient(app) as c:
+        yield c
+
+    openai_module._provider = original_provider
+    tts_module._tts_service = original_tts
+    storage_module._storage_service = original_storage
+
+
+@pytest.fixture
 def sample_ritual_data() -> dict:
     """Sample ritual data for testing."""
     return {

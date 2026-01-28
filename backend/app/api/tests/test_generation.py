@@ -17,12 +17,14 @@ skip_no_openai = pytest.mark.skipif(
 class TestGenerationAPI:
     """Tests for /api/generate endpoints."""
 
+    @pytest.mark.offline
     def test_generate_validation(self, client: TestClient):
         """Should validate request body."""
         # Missing intention
         response = client.post("/api/generate/ritual", json={})
         assert response.status_code == 422
 
+    @pytest.mark.ai
     @skip_no_openai
     def test_generate_ritual(self, client: TestClient):
         """Test ritual generation via API."""
@@ -43,6 +45,7 @@ class TestGenerationAPI:
         assert ritual["tone"] == "gentle"
         assert len(ritual["sections"]) > 0
 
+    @pytest.mark.ai
     @skip_no_openai
     def test_generate_ritual_saved(self, client: TestClient):
         """Generated ritual should be saved to storage."""
@@ -61,6 +64,7 @@ class TestGenerationAPI:
         assert get_response.status_code == 200
         assert get_response.json()["id"] == ritual_id
 
+    @pytest.mark.ai
     @skip_no_openai
     def test_generate_with_focus_areas(self, client: TestClient):
         """Should include focus areas in generation."""

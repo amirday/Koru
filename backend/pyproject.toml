@@ -7,6 +7,11 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+    "offline: No paid APIs - fully mocked (CI safe)",
+    "ai: Text generation APIs (requires OPENAI_API_KEY)",
+    "audio: Audio APIs (requires ELEVENLABS_API_KEY / GEMINI_API_KEY)",
+]
 
 [tool.pyright]
 venvPath = "."

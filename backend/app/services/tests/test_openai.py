@@ -20,16 +20,19 @@ skip_no_openai = pytest.mark.skipif(
 class TestOpenAIProvider:
     """Tests for OpenAI ritual generation."""
 
+    @pytest.mark.offline
     def test_is_available_with_key(self):
         """Should return True when API key is provided."""
         provider = OpenAIProvider(api_key="test-key")
         assert provider.is_available() is True
 
+    @pytest.mark.offline
     def test_is_available_without_key(self):
         """Should return False when API key is empty."""
         provider = OpenAIProvider(api_key="")
         assert provider.is_available() is False
 
+    @pytest.mark.offline
     def test_build_prompt(self):
         """Should build user prompt correctly."""
         provider = OpenAIProvider(api_key="fake")
@@ -47,6 +50,7 @@ class TestOpenAIProvider:
         assert "breathing" in prompt
         assert "300 seconds" in prompt  # 5 * 60
 
+    @pytest.mark.ai
     @skip_no_openai
     @pytest.mark.asyncio
     async def test_generate_ritual_real_api(self):

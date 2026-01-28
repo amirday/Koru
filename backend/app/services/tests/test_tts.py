@@ -27,17 +27,20 @@ skip_no_google = pytest.mark.skipif(
 class TestElevenLabsProvider:
     """Tests for ElevenLabs TTS provider."""
 
+    @pytest.mark.offline
     def test_voice_mapping(self):
         """Should map voice names to IDs."""
         provider = ElevenLabsTTSProvider(api_key="fake")
         assert provider.get_voice_id("sarah") == "EXAVITQu4vr4xnSDxMaL"
         assert provider.get_voice_id("daniel") == "onwK4e9ZLuTAKqWW03F9"
 
+    @pytest.mark.offline
     def test_unknown_voice_passthrough(self):
         """Unknown voice name should pass through as-is."""
         provider = ElevenLabsTTSProvider(api_key="fake")
         assert provider.get_voice_id("custom-id") == "custom-id"
 
+    @pytest.mark.offline
     def test_get_voices(self):
         """Should return list of voices."""
         provider = ElevenLabsTTSProvider(api_key="fake")
@@ -45,6 +48,7 @@ class TestElevenLabsProvider:
         assert len(voices) == len(ELEVENLABS_VOICES)
         assert all(v.provider == "elevenlabs" for v in voices)
 
+    @pytest.mark.offline
     def test_is_available(self):
         """Should check API key availability."""
         provider_with_key = ElevenLabsTTSProvider(api_key="test-key")
@@ -53,6 +57,7 @@ class TestElevenLabsProvider:
         provider_no_key = ElevenLabsTTSProvider(api_key="")
         assert provider_no_key.is_available() is False
 
+    @pytest.mark.audio
     @skip_no_elevenlabs
     @pytest.mark.asyncio
     async def test_synthesize_real_api(self, minimal_tts_text):
@@ -69,12 +74,14 @@ class TestElevenLabsProvider:
 class TestGoogleTTSProvider:
     """Tests for Google Gemini TTS provider."""
 
+    @pytest.mark.offline
     def test_voice_mapping(self):
         """Should map voice names to IDs."""
         provider = GoogleTTSProvider(api_key="fake")
         assert provider.get_voice_id("aoede") == "Aoede"
         assert provider.get_voice_id("charon") == "Charon"
 
+    @pytest.mark.offline
     def test_get_voices(self):
         """Should return list of voices."""
         provider = GoogleTTSProvider(api_key="fake")
@@ -82,6 +89,7 @@ class TestGoogleTTSProvider:
         assert len(voices) == len(GOOGLE_VOICES)
         assert all(v.provider == "google" for v in voices)
 
+    @pytest.mark.offline
     def test_is_available(self):
         """Should check API key availability."""
         provider_with_key = GoogleTTSProvider(api_key="test-key")
@@ -90,6 +98,7 @@ class TestGoogleTTSProvider:
         provider_no_key = GoogleTTSProvider(api_key="")
         assert provider_no_key.is_available() is False
 
+    @pytest.mark.audio
     @skip_no_google
     @pytest.mark.asyncio
     async def test_synthesize_real_api(self, minimal_tts_text):
@@ -106,6 +115,7 @@ class TestGoogleTTSProvider:
 class TestTTSService:
     """Tests for TTS orchestration service."""
 
+    @pytest.mark.offline
     def test_get_provider(self):
         """Should return correct provider."""
         service = TTSService()
@@ -116,12 +126,14 @@ class TestTTSService:
         google = service.get_provider("google")
         assert isinstance(google, GoogleTTSProvider)
 
+    @pytest.mark.offline
     def test_invalid_provider(self):
         """Should raise for invalid provider."""
         service = TTSService()
         with pytest.raises(ValueError, match="Unknown provider"):
             service.get_provider("invalid")
 
+    @pytest.mark.offline
     def test_get_all_voices(self):
         """Should combine voices from all providers."""
         service = TTSService()
@@ -133,6 +145,7 @@ class TestTTSService:
         assert "elevenlabs" in providers
         assert "google" in providers
 
+    @pytest.mark.audio
     @skip_no_elevenlabs
     @pytest.mark.asyncio
     async def test_synthesize_with_storage(self, test_storage_path, minimal_tts_text):

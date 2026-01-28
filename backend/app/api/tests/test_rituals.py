@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 
+@pytest.mark.offline
 class TestRitualsAPI:
     """Tests for /api/rituals endpoints."""
 

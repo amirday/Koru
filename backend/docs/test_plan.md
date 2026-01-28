@@ -18,10 +18,80 @@
    # Add your API keys
    ```
 
-3. Start the server:
+3. Start the server (for manual curl tests only):
    ```bash
    uvicorn app.main:app --reload --port 8000
    ```
+
+---
+
+## Automated Test Tiers
+
+All automated tests are tagged with pytest markers organized into three tiers:
+
+| Tier | Marker | API keys needed | Purpose |
+|------|--------|----------------|---------|
+| **Offline** | `@pytest.mark.offline` | None | Runs in CI. All external APIs mocked. |
+| **AI** | `@pytest.mark.ai` | `OPENAI_API_KEY` | Real text generation via OpenAI. |
+| **Audio** | `@pytest.mark.audio` | `ELEVENLABS_API_KEY` and/or `GEMINI_API_KEY` | Real TTS audio synthesis. |
+
+### Running each tier
+
+```bash
+# Offline only — no API keys needed, safe for CI
+cd backend && python -m pytest -m offline -v
+
+# Offline + AI — requires OPENAI_API_KEY
+cd backend && python -m pytest -m "offline or ai" -v
+
+# Offline + Audio — requires TTS API keys
+cd backend && python -m pytest -m "offline or audio" -v
+
+# All tiers — requires all API keys
+cd backend && python -m pytest -m "offline or ai or audio" -v
+
+# Everything (unfiltered) — skipif decorators still protect missing keys
+cd backend && python -m pytest -v
+
+# Collect-only (see what would run without executing)
+cd backend && python -m pytest --co -m offline
+```
+
+### Test file breakdown by tier
+
+**Offline (78 tests)**:
+- `tests/test_health.py` — health endpoints
+- `tests/test_integration.py` — error handling, CRUD flow
+- `app/models/tests/test_ritual.py` — model validation
+- `app/models/tests/test_tts.py` — TTS model validation
+- `app/api/tests/test_rituals.py` — CRUD endpoints
+- `app/api/tests/test_generation.py` — validation only
+- `app/api/tests/test_generation_mocked.py` — full generation with mocked OpenAI
+- `app/api/tests/test_tts.py` — voice listing, validation
+- `app/api/tests/test_tts_mocked.py` — TTS synthesis with mocks, full flow
+- `app/services/tests/test_storage.py` — storage operations
+- `app/services/tests/test_openai.py` — availability, prompt building
+- `app/services/tests/test_tts.py` — voice mapping, provider selection
+- `app/services/tests/test_tts_mocked.py` — TTSService unit tests with mocks
+
+**AI (4 tests)**: `test_generation.py`, `test_openai.py` — real OpenAI calls
+
+**Audio (8 tests)**: `test_integration.py`, `test_tts.py` (API + service) — real TTS calls
+
+### Mock providers
+
+Mock providers live in `tests/mocks/` and are injected via conftest fixtures:
+- `MockOpenAIProvider` — deterministic 3-section ritual
+- `MockElevenLabsTTSProvider` — fake MP3 bytes
+- `MockGoogleTTSProvider` — fake WAV bytes
+
+See `docs/plans/test_tiers.md` for full details on mock injection and adding new tests.
+
+---
+
+## Manual Tests (curl)
+
+The tests below are manual curl-based tests for verifying the running server.
 
 ---
 

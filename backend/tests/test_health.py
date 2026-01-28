@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 
+@pytest.mark.offline
 class TestHealth:
     """Tests for health check endpoints."""
 

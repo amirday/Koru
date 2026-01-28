@@ -8,6 +8,7 @@ from app.models.ritual import Ritual
 from app.services.storage import StorageService
 
 
+@pytest.mark.offline
 class TestStorageService:
     """Tests for StorageService."""
 

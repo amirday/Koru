@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from app.models.tts import Voice, TTSRequest, TTSResponse, TTSResult
 
 
+@pytest.mark.offline
 class TestVoice:
     """Tests for Voice model."""
 
@@ -35,6 +36,7 @@ class TestVoice:
             Voice(id="test", name="Test", provider="invalid")
 
 
+@pytest.mark.offline
 class TestTTSRequest:
     """Tests for TTSRequest model."""
 
@@ -72,6 +74,7 @@ class TestTTSRequest:
             TTSRequest(text="Hi.", provider="invalid")
 
 
+@pytest.mark.offline
 class TestTTSResponse:
     """Tests for TTSResponse model."""
 
@@ -89,6 +92,7 @@ class TestTTSResponse:
         assert "durationSeconds" in data
 
 
+@pytest.mark.offline
 class TestTTSResult:
     """Tests for internal TTSResult model."""
 

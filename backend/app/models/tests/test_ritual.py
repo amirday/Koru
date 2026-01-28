@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from app.models.ritual import Ritual, RitualSection, Segment, RitualCreate
 
 
+@pytest.mark.offline
 class TestSegment:
     """Tests for Segment model."""
 
@@ -37,6 +38,7 @@ class TestSegment:
             Segment(type="invalid", durationSeconds=2)
 
 
+@pytest.mark.offline
 class TestRitualSection:
     """Tests for RitualSection model."""
 
@@ -66,6 +68,7 @@ class TestRitualSection:
             RitualSection(type="invalid", durationSeconds=10)
 
 
+@pytest.mark.offline
 class TestRitual:
     """Tests for Ritual model."""
 
@@ -101,6 +104,7 @@ class TestRitual:
             assert ritual.tone == tone
 
 
+@pytest.mark.offline
 class TestRitualCreate:
     """Tests for RitualCreate request model."""
 

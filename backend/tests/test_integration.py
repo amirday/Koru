@@ -18,6 +18,7 @@ skip_no_apis = pytest.mark.skipif(
 class TestFullFlow:
     """Integration tests for complete workflows."""
 
+    @pytest.mark.audio
     @skip_no_apis
     def test_generate_and_synthesize_flow(self, client: TestClient):
         """
@@ -68,6 +69,7 @@ class TestFullFlow:
         delete_response = client.delete(f"/api/rituals/{ritual_id}")
         assert delete_response.status_code == 200
 
+    @pytest.mark.offline
     def test_ritual_crud_flow(self, client: TestClient, sample_ritual_data: dict):
         """Full CRUD flow for rituals."""
         ritual_id = sample_ritual_data["id"]
@@ -100,6 +102,7 @@ class TestFullFlow:
         get_deleted = client.get(f"/api/rituals/{ritual_id}")
         assert get_deleted.status_code == 404
 
+    @pytest.mark.audio
     @skip_no_apis
     def test_multi_provider_tts(self, client: TestClient, minimal_tts_text: str):
         """Test TTS with multiple providers."""
@@ -122,6 +125,7 @@ class TestFullFlow:
             assert google_response.status_code == 200
 
 
+@pytest.mark.offline
 class TestErrorHandling:
     """Tests for error scenarios."""
 

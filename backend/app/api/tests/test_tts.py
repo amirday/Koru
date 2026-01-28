@@ -22,6 +22,7 @@ skip_no_google = pytest.mark.skipif(
 class TestTTSAPI:
     """Tests for /api/tts endpoints."""
 
+    @pytest.mark.offline
     def test_list_voices(self, client: TestClient):
         """Should list available voices."""
         response = client.get("/api/tts/voices")
@@ -32,6 +33,7 @@ class TestTTSAPI:
         # Should have some voices
         assert len(voices) > 0
 
+    @pytest.mark.offline
     def test_list_elevenlabs_voices(self, client: TestClient):
         """Should list ElevenLabs voices."""
         response = client.get("/api/tts/voices/elevenlabs")
@@ -40,6 +42,7 @@ class TestTTSAPI:
         voices = response.json()
         assert all(v["provider"] == "elevenlabs" for v in voices)
 
+    @pytest.mark.offline
     def test_list_google_voices(self, client: TestClient):
         """Should list Google voices."""
         response = client.get("/api/tts/voices/google")
@@ -48,11 +51,13 @@ class TestTTSAPI:
         voices = response.json()
         assert all(v["provider"] == "google" for v in voices)
 
+    @pytest.mark.offline
     def test_invalid_provider(self, client: TestClient):
         """Should return 400 for invalid provider."""
         response = client.get("/api/tts/voices/invalid")
         assert response.status_code == 400
 
+    @pytest.mark.offline
     def test_synthesize_validation(self, client: TestClient):
         """Should validate request body."""
         # Missing text
@@ -66,6 +71,7 @@ class TestTTSAPI:
         })
         assert response.status_code == 422
 
+    @pytest.mark.audio
     @skip_no_elevenlabs
     def test_synthesize_elevenlabs(self, client: TestClient, minimal_tts_text: str):
         """Test ElevenLabs TTS via API."""
@@ -85,6 +91,7 @@ class TestTTSAPI:
         audio_response = client.get(data["audioUrl"])
         assert audio_response.status_code == 200
 
+    @pytest.mark.audio
     @skip_no_google
     def test_synthesize_google(self, client: TestClient, minimal_tts_text: str):
         """Test Google TTS via API."""
@@ -99,6 +106,7 @@ class TestTTSAPI:
         assert "audioUrl" in data
         assert data["durationSeconds"] > 0
 
+    @pytest.mark.audio
     @skip_no_elevenlabs
     def test_synthesize_with_ritual(self, client: TestClient, sample_ritual_data: dict, minimal_tts_text: str):
         """Test TTS with ritual/segment IDs."""
