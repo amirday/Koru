@@ -249,24 +249,30 @@ The Feed screen replaces the previous Home screen with a vertical, scrollable li
 - Title: "Feed"
 - Simple, clean header
 
-#### 6.1 Ritual Feed (Vertical Scroll)
-A continuous vertical list combining:
-- **Discover section**: Template rituals (quick starts)
-- **Your Rituals section**: User's saved rituals
+#### 6.1 Ritual Feed (Unified Flat List)
+A single, continuous vertical list of all rituals (no section headers).
+
+**Sort order**:
+1. User ritual with most recent `lastUsedAt` (most recently used)
+2. User ritual with most recent `createdAt` (most recently created, skip if same as #1)
+3. All remaining rituals (templates + remaining user rituals)
 
 Each **FeedRitualCard** includes:
 - Title (serif, prominent)
+- "Created by you" annotation (subtle peach text, shown for non-template rituals)
 - Description (2-line truncate)
-- Badges: Duration, Tone, Soundscape icon
-- Template badge (for quick starts)
+- Badges: Duration, Tone (color-coded: green/gentle, calm/neutral, peach/coach), Soundscape icon
+- Tags (pill badges from `ritual.tags[]`, warm-50 background)
 - Favorite indicator (heart icon)
-- Tap → Navigate to Generation screen (with template pre-filled)
+- Footer row: creation date (left) + "Start" button (right, primary small)
+- Tap card or Start button → Navigate to Generation screen (with template pre-filled)
 
 **Card Design**:
 - Full-width with rounded corners (16px radius)
 - White background with subtle border
 - Warm shadow on hover
-- Subtle scale animation on tap
+- Subtle scale animation on hover
+- Footer separated by a top border (warm-100)
 
 #### 6.2 Sticky Create Button
 - Fixed position above bottom tab bar

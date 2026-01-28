@@ -1,8 +1,9 @@
 /**
- * FeedScreen - Main feed showing rituals in vertical scroll
- * Features: Templates + saved rituals, sticky create button
+ * FeedScreen - Main feed showing rituals in a unified vertical scroll
+ * Features: Single flat list, sorted by usage/creation, sticky create button
  */
 
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Header, ScreenContainer } from '@/components/layout'
 import { FeedRitualCard, StickyCreateButton } from '@/components/feed'
@@ -10,22 +11,66 @@ import { useRituals } from '@/contexts'
 import type { Ritual } from '@/types'
 
 /**
- * Feed screen with vertical ritual list
+ * Sort rituals for the feed:
+ * 1. User ritual with most recent lastUsedAt
+ * 2. User ritual with most recent createdAt (skip if same as #1)
+ * 3. All remaining rituals
+ */
+function sortFeedRituals(rituals: Ritual[], templates: Ritual[]): Ritual[] {
+  const allRituals = [...templates, ...rituals]
+  if (allRituals.length === 0) return []
+
+  const result: Ritual[] = []
+  const used = new Set<string>()
+
+  // 1. User ritual with most recent lastUsedAt
+  const userRituals = rituals.filter((r) => !r.isTemplate)
+  const mostRecentlyUsed = userRituals
+    .filter((r) => r.statistics?.lastUsedAt)
+    .sort((a, b) => {
+      const aTime = a.statistics?.lastUsedAt ?? ''
+      const bTime = b.statistics?.lastUsedAt ?? ''
+      return bTime.localeCompare(aTime)
+    })[0]
+
+  if (mostRecentlyUsed) {
+    result.push(mostRecentlyUsed)
+    used.add(mostRecentlyUsed.id)
+  }
+
+  // 2. User ritual with most recent createdAt (skip if same as #1)
+  const mostRecentlyCreated = userRituals
+    .filter((r) => !used.has(r.id))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+
+  if (mostRecentlyCreated) {
+    result.push(mostRecentlyCreated)
+    used.add(mostRecentlyCreated.id)
+  }
+
+  // 3. All remaining rituals
+  const remaining = allRituals.filter((r) => !used.has(r.id))
+  result.push(...remaining)
+
+  return result
+}
+
+/**
+ * Feed screen with unified ritual list
  */
 export function FeedScreen() {
   const navigate = useNavigate()
   const { rituals, templates, isLoading } = useRituals()
 
-  // Combine templates and saved rituals for the feed
-  // Templates first, then user's saved rituals
-  const feedItems: Ritual[] = [...templates, ...rituals]
+  const feedItems = useMemo(
+    () => sortFeedRituals(rituals, templates),
+    [rituals, templates]
+  )
 
   /**
    * Handle ritual card click - navigate to generation screen
-   * In the future, this could navigate directly to session for templates
    */
   const handleRitualClick = (ritual: Ritual) => {
-    // Navigate to generation screen with ritual as template
     navigate('/generate', { state: { templateRitual: ritual } })
   }
 
@@ -74,44 +119,16 @@ export function FeedScreen() {
           </div>
         )}
 
-        {/* Ritual feed */}
+        {/* Unified ritual feed */}
         {!isLoading && feedItems.length > 0 && (
-          <div className="space-y-4">
-            {/* Section: Discover */}
-            {templates.length > 0 && (
-              <section>
-                <h2 className="font-serif text-lg font-semibold text-calm-900 mb-3">
-                  Discover
-                </h2>
-                <div className="space-y-3">
-                  {templates.map((ritual) => (
-                    <FeedRitualCard
-                      key={ritual.id}
-                      ritual={ritual}
-                      onClick={() => handleRitualClick(ritual)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Section: Your Rituals */}
-            {rituals.length > 0 && (
-              <section className={templates.length > 0 ? 'mt-8' : ''}>
-                <h2 className="font-serif text-lg font-semibold text-calm-900 mb-3">
-                  Your Rituals
-                </h2>
-                <div className="space-y-3">
-                  {rituals.map((ritual) => (
-                    <FeedRitualCard
-                      key={ritual.id}
-                      ritual={ritual}
-                      onClick={() => handleRitualClick(ritual)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+          <div className="space-y-3">
+            {feedItems.map((ritual) => (
+              <FeedRitualCard
+                key={ritual.id}
+                ritual={ritual}
+                onClick={() => handleRitualClick(ritual)}
+              />
+            ))}
           </div>
         )}
       </ScreenContainer>

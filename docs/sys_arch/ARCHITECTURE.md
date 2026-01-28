@@ -114,7 +114,7 @@ koru/
 │   │   │   └── QuickStartCard.tsx
 │   │   │
 │   │   ├── feed/                    # Feed screen components
-│   │   │   ├── FeedRitualCard.tsx    # Vertical card for feed display
+│   │   │   ├── FeedRitualCard.tsx    # Vertical card with tags, tone colors, Start button, "Created by you" annotation
 │   │   │   ├── StickyCreateButton.tsx # Fixed bottom create button
 │   │   │   └── index.ts
 │   │   │
